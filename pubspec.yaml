@@ -1,0 +1,40 @@
+name: microcash_tripulacion
+description: "Microcash Tripulación."
+
+publish_to: 'Microcash'
+version: 1.0.1
+
+environment:
+  sdk: '>=3.4.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  google_fonts: ^6.2.1
+  flutter_dotenv: ^5.1.0
+  dio: ^5.5.0+1
+  nb_utils: ^7.0.3
+  flutter_launcher_icons: ^0.13.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+
+flutter:
+
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - .env
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: 'assets/images/logo_app_2.jpg'
+  min_sdk_android: 21
