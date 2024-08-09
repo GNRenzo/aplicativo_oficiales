@@ -175,6 +175,7 @@ class _MyHomePageState extends State<MyHomePage> {
           await _UpdateList();
         },
         child: Container(
+          height: MediaQuery.sizeOf(context).height,
           padding: const EdgeInsets.all(16),
           color: Theme.of(context).colorScheme.onPrimary,
           child: Column(
@@ -186,29 +187,36 @@ class _MyHomePageState extends State<MyHomePage> {
                   ElevatedButton.icon(
                     onPressed: () => _setFiltro(1),
                     style: ButtonStyle(
-                      backgroundColor:
-                      _filtroEstado == 2 ?
-                      WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary):
-                      WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                      foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-
+                      backgroundColor: _filtroEstado == 2
+                          ? WidgetStateProperty.all<Color>(
+                              Theme.of(context).colorScheme.onTertiary)
+                          : WidgetStateProperty.all<Color>(
+                              Theme.of(context).colorScheme.tertiaryContainer),
+                      foregroundColor: WidgetStateProperty.all<Color>(
+                          Theme.of(context).colorScheme.onPrimaryFixed),
                     ),
-                    label: const Text('  Por Atender', style: TextStyle(fontWeight: FontWeight.bold),),
+                    label: const Text(
+                      '  Por Atender',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: () => _setFiltro(2),
                     style: ButtonStyle(
-                      backgroundColor:
-                      _filtroEstado == 1 ?
-                      WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary):
-                      WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                      foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-
+                      backgroundColor: _filtroEstado == 1
+                          ? WidgetStateProperty.all<Color>(
+                              Theme.of(context).colorScheme.onTertiary)
+                          : WidgetStateProperty.all<Color>(
+                              Theme.of(context).colorScheme.tertiaryContainer),
+                      foregroundColor: WidgetStateProperty.all<Color>(
+                          Theme.of(context).colorScheme.onPrimaryFixed),
                     ),
-                    label: const Text('Atendido', style: TextStyle(fontWeight: FontWeight.bold),),
+                    label: const Text(
+                      'Atendido',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
-
                 ],
               ),
               const SizedBox(height: 16),
@@ -225,7 +233,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => Services(item: item, user: widget.trabajador)),
+                                builder: (context) => Services(
+                                    item: item, user: widget.trabajador)),
                           );
                         }
                       },
@@ -294,7 +303,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   "SERIAL DE ENVASE: ",
                                   style: TextStyle(
                                       color:
-                                      Theme.of(context).colorScheme.primary,
+                                          Theme.of(context).colorScheme.primary,
                                       fontWeight: FontWeight.bold),
                                 ),
                                 Text("${item['serial']}"),
@@ -407,8 +416,8 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
       if (item['contactos'] != null) ...[
         ...item['contactos'].entries.map(
               (entry) =>
-              Text('${entry.key.toString().toUpperCase()}: ${entry.value}'),
-        ),
+                  Text('${entry.key.toString().toUpperCase()}: ${entry.value}'),
+            ),
       ],
       Text(
         "IMPORTE: ${item['importe']}",

@@ -67,7 +67,6 @@ class _LoginPageState extends State<LoginPage> {
             await dio.post("$link/control_accesos/api-token/", data: datas);
 
         if (response.statusCode == 200) {
-          print(json.encode(response.data));
           Map<String, dynamic>? decodedToken =
               JwtDecoder.decode(response.data['access']);
 

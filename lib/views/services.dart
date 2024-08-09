@@ -77,6 +77,7 @@ class _ServicesState extends State<Services> {
         ),
         body: SingleChildScrollView(
           child: Container(
+            height: MediaQuery.sizeOf(context).height,
             padding: const EdgeInsets.only(top: 16, left: 30, right: 30),
             color: Theme.of(context).colorScheme.onPrimary,
             child: Column(
@@ -175,11 +176,85 @@ class _ServicesState extends State<Services> {
                       : Container(
                           width: MediaQuery.sizeOf(context).width,
                           padding: const EdgeInsets.all(16),
-                          color: Colors.grey[200],
-                          child: Text(
-                            _selectedService,
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                          child: Column(
+                            children: [
+                              TextFormField(
+                                controller: _controllerComprobante,
+                                decoration: const InputDecoration(
+                                  labelText: 'Comprobante Visita',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              TextFormField(
+                                controller: _controllerMotivo,
+                                decoration: const InputDecoration(
+                                  labelText: 'Motivo',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _fileImage != null
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Center(
+                                        child: Image.file(
+                                          _fileImage!,
+                                          height: 100,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: _takePhoto,
+                                    child: Text('Foto Local'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: _addParada,
+                                    child: Text('Confirmar'),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 10),
+                              data['paradas'].length > 0
+                                  ? Container(
+                                      height: int.parse(data['paradas']
+                                              .length
+                                              .toString()) *
+                                          50,
+                                      child: ListView.builder(
+                                        physics: BouncingScrollPhysics(),
+                                        itemCount: data['paradas'].length,
+                                        itemBuilder: (context, index) {
+                                          var parada = data['paradas'][index];
+                                          return ListTile(
+                                            title: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                    '${parada['comprobante']}'),
+                                                Text('${parada['motivo']}'),
+                                                Text(parada['image'] != null
+                                                    ? 'Ver'
+                                                    : 'Sin imagen')
+                                              ],
+                                            ),
+                                            onTap: parada['image'] != null
+                                                ? () =>
+                                                    _viewImage(parada['image'])
+                                                : null,
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
                           ),
                         ),
               ],
@@ -198,6 +273,7 @@ class _ServicesState extends State<Services> {
     'canje': null,
     'num_serial': null,
     'billetes': [],
+    'paradas': [],
     'usuario': null,
     'firma': null
   };
@@ -211,16 +287,13 @@ class _ServicesState extends State<Services> {
           onTap: () {
             if (index == 0 || _isPressed[index - 1]) {
               if (index == 2 && !_dataProc[3]) {
-                Fluttertoast.showToast(
-                    msg: "Complete Los Datos ", backgroundColor: Colors.amber);
+                Fluttertoast.showToast(msg: "Complete Los Datos ");
                 return;
               } else {
                 _updateTime(key, index);
               }
             } else {
-              Fluttertoast.showToast(
-                  msg: "Seleccione el paso correctamente ",
-                  backgroundColor: Colors.amber);
+              Fluttertoast.showToast(msg: "Seleccione el paso correctamente ");
             }
           },
           child: Container(
@@ -253,12 +326,15 @@ class _ServicesState extends State<Services> {
 
   void _updateTime(String action, int index) {
     if (_isPressed[index]) return;
-
     String currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
     setState(
       () {
         _isPressed[index] = true;
         data[action] = currentTime;
+        if (index == 3) {
+          widget.item['estado'] = 2;
+          Navigator.pop(context);
+        }
       },
     );
   }
@@ -272,8 +348,11 @@ class _ServicesState extends State<Services> {
           'Inicio Servicio': null,
           'Fin de Servicio': null,
           'Salida de Punto': null,
+          'canje': null,
           'num_serial': null,
           'billetes': [],
+          'paradas': [],
+          'usuario': null,
           'firma': null
         };
         sigFirma.clear();
@@ -316,6 +395,9 @@ class _ServicesState extends State<Services> {
 
   late final TextEditingController _controllerSerial = TextEditingController();
   late final TextEditingController _controllerSerieB = TextEditingController();
+  late final TextEditingController _controllerComprobante =
+      TextEditingController();
+  late final TextEditingController _controllerMotivo = TextEditingController();
   SignatureController sigFirma = SignatureController(
       penStrokeWidth: 1.5,
       penColor: Colors.black,
@@ -369,16 +451,16 @@ class _ServicesState extends State<Services> {
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    _billeteImage != null
+                    _fileImage != null
                         ? Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Center(
-                            child: Image.file(
-                                _billeteImage!,
+                            padding: const EdgeInsets.all(8.0),
+                            child: Center(
+                              child: Image.file(
+                                _fileImage!,
                                 height: 120,
                               ),
-                          ),
-                        )
+                            ),
+                          )
                         : Container(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -391,33 +473,39 @@ class _ServicesState extends State<Services> {
                           onPressed: _addBillete,
                           child: Text('Agregar Billete'),
                         ),
-
                       ],
                     ),
-
                     SizedBox(height: 10),
-                    data['billetes'].length>0?Container(
-                      height: 200,
-                      child: ListView.builder(
-                        itemCount: data['billetes'].length,
-                        itemBuilder: (context, index) {
-                          var billete = data['billetes'][index];
-                          return ListTile(
-                            title: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('${billete['Serie']}'),
-                                Text(billete['image'] != null ? 'Ver' : 'Sin imagen')
-                              ],
+                    data['billetes'].length > 0
+                        ? Container(
+                            height:
+                                int.parse(data['billetes'].length.toString()) *
+                                    50,
+                            child: ListView.builder(
+                              physics: BouncingScrollPhysics(),
+                              itemCount: data['billetes'].length,
+                              itemBuilder: (context, index) {
+                                var billete = data['billetes'][index];
+                                return ListTile(
+                                  title: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('${billete['Serie']}'),
+                                      Text(billete['image'] != null
+                                          ? 'Ver'
+                                          : 'Sin imagen')
+                                    ],
+                                  ),
+                                  onTap: billete['image'] != null
+                                      ? () => _viewImage(billete['image'])
+                                      : null,
+                                );
+                              },
                             ),
-                            onTap: billete['image'] != null
-                                ? () => _viewImage(billete['image'])
-                                : null,
-                          );
-                        },
-                      ),
-                    ):SizedBox(),
-                      SizedBox(height: 10),
+                          )
+                        : SizedBox(),
+                    SizedBox(height: 10),
                     Container(
                       width: MediaQuery.sizeOf(context).width,
                       child: ElevatedButton(
@@ -450,38 +538,19 @@ class _ServicesState extends State<Services> {
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    SizedBox(height: 40),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Flexible(child: Text("NUMERO DE SERIAL")),
-                        SizedBox(width: 8),
-                        Flexible(
-                          child: TextFormField(
-                            controller: _controllerSerial,
-                            onChanged: (value) {
-                              data['num_serial'] = value;
-                            },
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              hintText: 'Ingrese Serial',
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: const BorderRadius.all(
-                                    Radius.circular(10.0)),
-                                borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).colorScheme.primary),
-                              ),
-                              focusedBorder: const OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(5.0)),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 40),
+                    TextFormField(
+                      controller: _controllerSerial,
+                      decoration: const InputDecoration(
+                        labelText: 'Número de Serial',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        data['num_serial'] = value;
+                      },
+                      textInputAction: TextInputAction.next,
                     ),
-                    SizedBox(height: 40),
+                    const SizedBox(height: 40),
                     Container(
                       width: MediaQuery.sizeOf(context).width,
                       child: Row(
@@ -493,7 +562,7 @@ class _ServicesState extends State<Services> {
                                 _dataProc[0] = false;
                               });
                             },
-                            child: Text("Atras"),
+                            child: const Text("Atras"),
                           ),
                           ElevatedButton(
                             onPressed: () {
@@ -594,7 +663,6 @@ class _ServicesState extends State<Services> {
                                       data['firma'] = filePath;
                                     });
                                     Fluttertoast.showToast(
-                                        backgroundColor: Colors.blue,
                                         msg: "Firma Capturada");
                                   },
                                   icon: Icon(Icons.save_as_outlined,
@@ -691,16 +759,17 @@ class _ServicesState extends State<Services> {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            setState(() {
-                              _dataProc[3] = true;
-                            });
-                            if (data['firma'].toString().trim() != '' &&
-                                data['firma'] != null) {
-                              print(data);
-                            } else {
-                              Fluttertoast.showToast(
-                                  msg: "Debe Registrar una firma");
-                            }
+                            setState(
+                              () {
+                                if (data['firma'].toString().trim() != '' &&
+                                    data['firma'] != null) {
+                                  _dataProc[3] = true;
+                                } else {
+                                  Fluttertoast.showToast(
+                                      msg: "Debe Registrar una firma");
+                                }
+                              },
+                            );
                           },
                           child: Text("CONFIRMAR"),
                         )
@@ -729,23 +798,25 @@ class _ServicesState extends State<Services> {
     );
   }
 
-  File? _billeteImage;
+  File? _fileImage;
   final ImagePicker _picker = ImagePicker();
 
   void _addBillete() {
     if (_controllerSerieB.text.isNotEmpty) {
-      // && _billeteImage != null
+      // && _fileImage != null
       var billete = {
         'Serie': _controllerSerieB.text,
-        'image': _billeteImage != null ? _billeteImage!.path : null,
+        'image': _fileImage != null ? _fileImage!.path : null,
       };
       setState(
         () {
           data['billetes'].add(billete);
           _controllerSerieB.clear();
-          _billeteImage = null;
+          _fileImage = null;
         },
       );
+    } else {
+      Fluttertoast.showToast(msg: "Serie Invialida");
     }
   }
 
@@ -753,8 +824,29 @@ class _ServicesState extends State<Services> {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
       setState(() {
-        _billeteImage = File(pickedFile.path);
+        _fileImage = File(pickedFile.path);
       });
+    }
+  }
+
+  void _addParada() {
+    if (_controllerComprobante.text.isNotEmpty &&
+        _controllerMotivo.text.isNotEmpty) {
+      var parada = {
+        'comprobante': _controllerComprobante.text,
+        'motivo': _controllerMotivo.text,
+        'image': _fileImage != null ? _fileImage!.path : null,
+      };
+      setState(
+        () {
+          data['paradas'].add(parada);
+          _controllerComprobante.clear();
+          _controllerMotivo.clear();
+          _fileImage = null;
+        },
+      );
+    } else {
+      Fluttertoast.showToast(msg: "Complete los Datos de Parada");
     }
   }
 
