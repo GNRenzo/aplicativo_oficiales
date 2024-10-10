@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -92,7 +91,6 @@ class _LoginPageState extends State<LoginPage> {
             'Código: 500 \n Error: No se pudo establecer la conexión con el servidor. Revise su conexión a internet e intentelo nuevamente en unos minutos.';
 
         if (response != null) {
-          // err = 'Código: ${response.statusCode}\n Mensaje: ${response.statusMessage}\n Error: ${response.data.toString()}';
           err = 'Credenciales Incorrectas';
         }
 

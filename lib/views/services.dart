@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,290 +12,135 @@ import 'package:image/image.dart' as ima;
 import 'package:image_picker/image_picker.dart';
 import 'package:signature/signature.dart';
 import 'package:intl/intl.dart';
-import 'home.dart';
 
 class Services extends StatefulWidget {
-  final dynamic item;
+  dynamic item;
   final dynamic user;
+  final int filtroStado;
+  final String fecha;
 
-  Services({required this.item, required this.user});
+  Services({required this.item, required this.user, required this.filtroStado, required this.fecha});
 
   @override
   State<Services> createState() => _ServicesState();
 }
 
 class _ServicesState extends State<Services> {
+  String link = dotenv.env['LINK'] ?? "http://localhost:8000";
   late Timer _timer;
   DateTime _currentDateTime = DateTime.now();
   String _selectedService = '';
+  var dio = Dio();
+  var comprobante = {};
+  var motivos = [];
+  late final TextEditingController _controllerComprobante = TextEditingController();
+  var selectMotivo;
+
+  int estado_plan = 0;
+  int estado_detalle = 0;
+  List arrbilletes = [];
+  var firma;
+  var serial = '';
+  late final TextEditingController _controllerSerial = TextEditingController();
+  late final TextEditingController _controllerSerieB = TextEditingController();
 
   @override
   void initState() {
+    obtenerDatos();
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 2), (Timer timer) {
       setState(() {
         _currentDateTime = DateTime.now();
-        data['usuario'] = widget.user['name'];
-        data['canje'] = '0001267';
       });
     });
+    estado_plan = widget.item['key_estado_plan_id'];
+    estado_detalle = widget.item['key_estado_detalle_hoja_id'];
+    if (widget.item['fecha_hora_llegada'] != null) {
+      _selectedService = 'ATENCIÓN SERVICIO';
+    }
   }
 
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.onPrimaryFixed,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'MICROCASH',
-                textScaleFactor: 1,
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14),
-              ),
-              Text(
-                DateFormat('dd MMM yyyy hh:mma', 'es_ES')
-                    .format(_currentDateTime),
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 13),
-              )
-            ],
-          ),
-          foregroundColor: Colors.white,
-        ),
-        body: SingleChildScrollView(
-          child: Container(
-            height: MediaQuery.sizeOf(context).height,
-            padding: const EdgeInsets.only(top: 16, left: 30, right: 30),
-            color: Theme.of(context).colorScheme.onPrimary,
-            child: Column(
-              children: [
-                WidgetDatos(context, widget.item),
-                _selectedService == ''
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _selectedService = 'ATENCIÓN SERVICIO';
-                              });
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .tertiaryContainer),
-                              foregroundColor: MaterialStateProperty.all<Color>(
-                                  Theme.of(context).colorScheme.onPrimaryFixed),
-                            ),
-                            child: const Text('ATENCIÓN SERVICIO',
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _selectedService = 'FALSA PARADA';
-                              });
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .tertiaryContainer),
-                              foregroundColor: MaterialStateProperty.all<Color>(
-                                  Theme.of(context).colorScheme.onPrimaryFixed),
-                            ),
-                            child: const Text('FALSA PARADA',
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      )
-                    : Stack(
-                        children: [
-                          Container(
-                            alignment: Alignment.center,
-                            width: MediaQuery.sizeOf(context).width,
-                            padding: const EdgeInsets.all(16),
-                            color: Colors.grey[400],
-                            child: Text(
-                              _selectedService,
-                              textScaleFactor: 1,
-                              style: const TextStyle(
-                                  fontSize: 13, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            child: IconButton(
-                              icon: Icon(Icons.close),
-                              onPressed: _showExitConfirmationDialog,
-                            ),
-                          ),
-                        ],
-                      ),
-                const SizedBox(height: 16),
-                if (_selectedService.isNotEmpty)
-                  _selectedService == 'ATENCIÓN SERVICIO'
-                      ? Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildButton(
-                                    'Llegada\nal punto', 'Llegada al punto', 0),
-                                _buildButton(
-                                    'Inicio\nServicio', 'Inicio Servicio', 1),
-                                _buildButton(
-                                    'Fin de\nServicio', 'Fin de Servicio', 2),
-                                _buildButton(
-                                    'Salida de\nPunto', 'Salida de Punto', 3),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            _selectedService == "" 'ATENCIÓN SERVICIO' &&
-                                    _isPressed[1] == true &&
-                                    !_isPressed[2]
-                                ? FormularioFinServicio()
-                                : SizedBox()
-                          ],
-                        )
-                      : Container(
-                          width: MediaQuery.sizeOf(context).width,
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                controller: _controllerComprobante,
-                                decoration: const InputDecoration(
-                                  labelText: 'Comprobante Visita',
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              TextFormField(
-                                controller: _controllerMotivo,
-                                decoration: const InputDecoration(
-                                  labelText: 'Motivo',
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              _fileImage != null
-                                  ? Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Center(
-                                        child: Image.file(
-                                          _fileImage!,
-                                          height: 100,
-                                        ),
-                                      ),
-                                    )
-                                  : Container(),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: _takePhoto,
-                                    child: Text('Foto Local'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: _addParada,
-                                    child: Text('Confirmar'),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 10),
-                              data['paradas'].length > 0
-                                  ? Container(
-                                      height: int.parse(data['paradas']
-                                              .length
-                                              .toString()) *
-                                          50,
-                                      child: ListView.builder(
-                                        physics: BouncingScrollPhysics(),
-                                        itemCount: data['paradas'].length,
-                                        itemBuilder: (context, index) {
-                                          var parada = data['paradas'][index];
-                                          return ListTile(
-                                            title: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(
-                                                    '${parada['comprobante']}'),
-                                                Text('${parada['motivo']}'),
-                                                Text(parada['image'] != null
-                                                    ? 'Ver'
-                                                    : 'Sin imagen')
-                                              ],
-                                            ),
-                                            onTap: parada['image'] != null
-                                                ? () =>
-                                                    _viewImage(parada['image'])
-                                                : null,
-                                          );
-                                        },
-                                      ),
-                                    )
-                                  : SizedBox(),
-                            ],
-                          ),
-                        ),
-              ],
-            ),
-          ),
-        ),
+  obtenerDatos() async {
+    var response = await dio.request(
+      '$link/api_mobile/apk_tripulación/siguiente_cv/',
+      options: Options(
+        method: 'GET',
       ),
     );
+    comprobante = (response.data['resultSet'][0]) ?? {};
+    _controllerComprobante.text = (response.data['resultSet'][0]['correlativo']) ?? {};
+
+    var response2 = await dio.request(
+      '$link/tablas/motivo/listar/?key_estado_id=1',
+      options: Options(
+        method: 'GET',
+      ),
+    );
+    motivos = response2.data['resultSet'];
   }
 
-  late Map<String, dynamic> data = {
-    'Llegada al punto': null,
-    'Inicio Servicio': null,
-    'Fin de Servicio': null,
-    'Salida de Punto': null,
-    'canje': null,
-    'num_serial': null,
-    'billetes': [],
-    'paradas': [],
-    'usuario': null,
-    'firma': null
-  };
-  List<bool> _isPressed = [false, false, false, false];
   List<bool> _dataProc = [false, false, false, false];
 
   Widget _buildButton(String title, String key, int index) {
     return Column(
       children: [
         GestureDetector(
-          onTap: () {
-            if (index == 0 || _isPressed[index - 1]) {
-              if (index == 2 && !_dataProc[3]) {
-                Fluttertoast.showToast(msg: "Complete Los Datos ");
-                return;
+          onTap: () async {
+            showDialog(
+              context: context,
+              barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
+              builder: (BuildContext context) {
+                return const AlertDialog(
+                  content: Row(
+                    children: [
+                      CircularProgressIndicator(), // Indicador circular de carga
+                      SizedBox(width: 20),
+                      Text("Cargando..."),
+                    ],
+                  ),
+                );
+              },
+            );
+            print("$estado_plan  $estado_detalle");
+            String anterior = "";
+            if (index == 2) {
+              anterior = 'fecha_hora_llegada';
+            }
+            if (index == 3) {
+              anterior = 'fecha_hora_inicio_servicio';
+            }
+            if (index == 4) {
+              anterior = 'fecha_hora_fin_servicio';
+            }
+            if (index == 1 || widget.item[anterior] != null) {
+              if (widget.item[key] != null) {
+                Fluttertoast.showToast(msg: "Dato Ya Registrado");
               } else {
-                _updateTime(key, index);
+                if (index != 3) {
+                  FormData formData = FormData.fromMap({
+                    "pe_etapa_atencion": index,
+                    "pe_user_id": widget.user['user_id'],
+                    "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    "pe_serial_envase": "",
+                    "pe_seriales_billetes": "",
+                    "pe_ruta_firma": ""
+                  });
+                  var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                  if (response.statusCode == 200) {
+                    Fluttertoast.showToast(msg: response.data['message']);
+                    //await UpdateList(widget.item['id_pedido']);
+                  } else {
+                    print(response.statusMessage);
+                  }
+                }
               }
             } else {
               Fluttertoast.showToast(msg: "Seleccione el paso correctamente ");
+            }
+            Navigator.of(context).pop();
+
+            if (index == 4) {
+              Navigator.of(context).pop();
             }
           },
           child: Container(
@@ -301,7 +148,7 @@ class _ServicesState extends State<Services> {
             margin: const EdgeInsets.all(5),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: _isPressed[index] ? Colors.blue : Colors.grey,
+              color: widget.item[key] != null ? Colors.blue : Colors.grey,
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(30.0),
                 bottomLeft: Radius.circular(30.0),
@@ -316,99 +163,20 @@ class _ServicesState extends State<Services> {
           ),
         ),
         Text(
-          data[key] != null ? data[key]! : '',
-          style:
-              const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          "${widget.item[key] != 'null' && widget.item[key] != null ? widget.item[key].toString().replaceAll(' ', '\n') : ''}",
+          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
       ],
     );
   }
 
-  void _updateTime(String action, int index) {
-    if (_isPressed[index]) return;
-    String currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
-    setState(
-      () {
-        _isPressed[index] = true;
-        data[action] = currentTime;
-        if (index == 3) {
-          widget.item['estado'] = 2;
-          Navigator.pop(context);
-        }
-      },
-    );
-  }
-
-  void limpiarDatos() {
-    setState(
-      () {
-        _selectedService = '';
-        data = {
-          'Llegada al punto': null,
-          'Inicio Servicio': null,
-          'Fin de Servicio': null,
-          'Salida de Punto': null,
-          'canje': null,
-          'num_serial': null,
-          'billetes': [],
-          'paradas': [],
-          'usuario': null,
-          'firma': null
-        };
-        sigFirma.clear();
-        _isPressed = [false, false, false, false];
-        _dataProc = [false, false, false, false];
-        _controllerSerial.text = '';
-      },
-    );
-  }
-
-  void _showExitConfirmationDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Alerta'),
-          content: Text('¿Está seguro que desea salir?'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Salir'),
-              onPressed: () {
-                setState(() {
-                  limpiarDatos();
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Cancelar'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  late final TextEditingController _controllerSerial = TextEditingController();
-  late final TextEditingController _controllerSerieB = TextEditingController();
-  late final TextEditingController _controllerComprobante =
-      TextEditingController();
-  late final TextEditingController _controllerMotivo = TextEditingController();
-  SignatureController sigFirma = SignatureController(
-      penStrokeWidth: 1.5,
-      penColor: Colors.black,
-      exportBackgroundColor: Colors.white,
-      exportPenColor: Colors.black);
+  SignatureController sigFirma = SignatureController(penStrokeWidth: 1.5, penColor: Colors.black, exportBackgroundColor: Colors.white, exportPenColor: Colors.black);
 
   Widget FormularioFinServicio() {
     String seriales = '';
-    if (data['billetes'] != null && data['billetes'] is List) {
+    if (arrbilletes != null && arrbilletes is List) {
       List<String> serialesList = [];
-      for (var billete in data['billetes']) {
+      for (var billete in arrbilletes) {
         serialesList.add(billete['Serie']);
       }
       seriales = serialesList.join(', ');
@@ -425,20 +193,19 @@ class _ServicesState extends State<Services> {
                     const SizedBox(height: 10),
                     const Center(
                       child: Text(
-                        " BILLETES SOSPECHOSOS",
+                        "BILLETES SOSPECHOSOS",
                         textScaleFactor: 1,
                         maxLines: 2,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                     SizedBox(height: 10),
                     Row(
                       children: [
-                        data['billetes'] != null
+                        arrbilletes != null
                             ? Text(
-                                "CANTIDAD DE BILLETES SOSPECHOSOS  ${data['billetes'].length}",
+                                "CANTIDAD DE BILLETES SOSPECHOSOS  ${arrbilletes.length}",
                               )
                             : SizedBox()
                       ],
@@ -476,30 +243,20 @@ class _ServicesState extends State<Services> {
                       ],
                     ),
                     SizedBox(height: 10),
-                    data['billetes'].length > 0
+                    arrbilletes.length > 0
                         ? Container(
-                            height:
-                                int.parse(data['billetes'].length.toString()) *
-                                    50,
+                            height: int.parse(arrbilletes.length.toString()) * 50,
                             child: ListView.builder(
                               physics: BouncingScrollPhysics(),
-                              itemCount: data['billetes'].length,
+                              itemCount: arrbilletes.length,
                               itemBuilder: (context, index) {
-                                var billete = data['billetes'][index];
+                                var billete = arrbilletes[index];
                                 return ListTile(
                                   title: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('${billete['Serie']}'),
-                                      Text(billete['image'] != null
-                                          ? 'Ver'
-                                          : 'Sin imagen')
-                                    ],
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [Text('${billete['Serie']}'), Text(billete['image'] != null ? 'Ver' : 'Sin imagen')],
                                   ),
-                                  onTap: billete['image'] != null
-                                      ? () => _viewImage(billete['image'])
-                                      : null,
+                                  onTap: billete['image'] != null ? () => _viewImage(billete['image']) : null,
                                 );
                               },
                             ),
@@ -510,11 +267,38 @@ class _ServicesState extends State<Services> {
                       width: MediaQuery.sizeOf(context).width,
                       child: ElevatedButton(
                         onPressed: () {
-                          setState(
-                            () {
+                          if (arrbilletes.length == 0) {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text("¿Estás seguro?"),
+                                  content: Text("No hay billetes en la lista. ¿Deseas continuar?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text("Cancelar"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _dataProc[0] = true;
+                                        });
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text("Continuar"),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          } else {
+                            setState(() {
                               _dataProc[0] = true;
-                            },
-                          );
+                            });
+                          }
                         },
                         child: Text("Siguiente"),
                       ),
@@ -534,8 +318,7 @@ class _ServicesState extends State<Services> {
                         textScaleFactor: 1,
                         maxLines: 2,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -546,41 +329,27 @@ class _ServicesState extends State<Services> {
                         border: OutlineInputBorder(),
                       ),
                       onChanged: (value) {
-                        data['num_serial'] = value;
+                        serial = value;
                       },
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 40),
-                    Container(
-                      width: MediaQuery.sizeOf(context).width,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _dataProc[0] = false;
-                              });
-                            },
-                            child: const Text("Atras"),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                if (data['num_serial'].toString().trim() !=
-                                        '' &&
-                                    data['num_serial'] != null) {
-                                  _dataProc[1] = true;
-                                } else {
-                                  Fluttertoast.showToast(
-                                      msg: "Debe Ingresar Serial");
-                                }
-                              });
-                            },
-                            child: Text("Siguiente"),
-                          ),
-                        ],
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              if (serial.toString().trim() != '' && serial != null) {
+                                _dataProc[1] = true;
+                              } else {
+                                Fluttertoast.showToast(msg: "Debe Ingresar Serial");
+                              }
+                            });
+                          },
+                          child: Text("Siguiente"),
+                        ),
+                      ],
                     )
                   ],
                 )
@@ -597,8 +366,7 @@ class _ServicesState extends State<Services> {
                         textScaleFactor: 1,
                         maxLines: 2,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                     SizedBox(height: 10),
@@ -626,7 +394,7 @@ class _ServicesState extends State<Services> {
                                   icon: Icon(Icons.clear, color: Colors.red),
                                   onPressed: () {
                                     sigFirma.clear();
-                                    data['firma'] = null;
+                                    firma = null;
                                   },
                                 ),
                                 IconButton(
@@ -644,60 +412,36 @@ class _ServicesState extends State<Services> {
                                 IconButton(
                                   onPressed: () async {
                                     if (sigFirma.isEmpty) {
-                                      Fluttertoast.showToast(
-                                          msg: "No Eiste Firma para Registrar");
+                                      Fluttertoast.showToast(msg: "No Existe Firma para Registrar");
                                       return;
                                     }
-                                    Uint8List recorder =
-                                        await sigFirma.toPngBytes() ??
-                                            Uint8List(0);
-                                    final tempDir =
-                                        await getTemporaryDirectory();
-                                    final filePath =
-                                        '${tempDir.path}/firma_${DateTime.now().toString().split('.')[0].replaceAll('-', '').replaceAll(':', '').replaceAll(' ', '')}.jpg';
-                                    var image = ima.decodeImage(
-                                        Uint8List.fromList(recorder));
-                                    File(filePath).writeAsBytesSync(
-                                        ima.encodePng(image!));
+                                    Uint8List recorder = await sigFirma.toPngBytes() ?? Uint8List(0);
+                                    final tempDir = await getTemporaryDirectory();
+                                    final filePath = '${tempDir.path}/firma_${DateTime.now().toString().split('.')[0].replaceAll('-', '').replaceAll(':', '').replaceAll(' ', '')}.jpg';
+                                    var image = ima.decodeImage(Uint8List.fromList(recorder));
+                                    File(filePath).writeAsBytesSync(ima.encodePng(image!));
                                     setState(() {
-                                      data['firma'] = filePath;
+                                      firma = filePath;
                                     });
-                                    Fluttertoast.showToast(
-                                        msg: "Firma Capturada");
+                                    Fluttertoast.showToast(msg: "Firma Capturada");
                                   },
-                                  icon: Icon(Icons.save_as_outlined,
-                                      color: Colors.blue),
+                                  icon: Icon(Icons.save_as_outlined, color: Colors.blue),
                                 ),
                               ],
                             ),
                           ),
                           SizedBox(height: 30),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _dataProc[1] = false;
-                                  });
-                                },
-                                child: Text("Atras"),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  if (data['firma'].toString().trim() != '' &&
-                                      data['firma'] != null) {
-                                    setState(() {
-                                      _dataProc[2] = true;
-                                    });
-                                  } else {
-                                    Fluttertoast.showToast(
-                                        msg: "Debe Registrar una firma");
-                                  }
-                                },
-                                child: Text("Siguiente"),
-                              )
-                            ],
+                          ElevatedButton(
+                            onPressed: () {
+                              if (firma.toString().trim() != '' && firma != null) {
+                                setState(() {
+                                  _dataProc[2] = true;
+                                });
+                              } else {
+                                Fluttertoast.showToast(msg: "Debe Registrar una firma");
+                              }
+                            },
+                            child: Text("Siguiente"),
                           ),
                         ],
                       ),
@@ -719,22 +463,21 @@ class _ServicesState extends State<Services> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("CS CANJE: ${data['canje']}"),
+                          Text("CS CANJE:  ${widget.item['comprobante_servicio']}"),
                           Text("IMPORTE:  ${widget.item['importe']}"),
-                          if (data['billetes'] != null) ...[
-                            Text(
-                                "BILLETES SOSPECHOSOS:  ${data['billetes'].toList().length}"),
+                          if (arrbilletes != null) ...[
+                            Text("BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
                             Text("SERIALES: $seriales"),
                           ],
-                          Text("ENVASE SERIAL: ${data['num_serial']}"),
+                          Text("ENVASE SERIAL: ${serial}"),
                           Text("CONFORMIDAD: ${widget.user['name']}"),
                           SizedBox(
                             height: 15,
                           ),
                           Center(
-                            child: data['firma'] != null
+                            child: firma != null
                                 ? Image.file(
-                                    File(data['firma']!),
+                                    File(firma!),
                                     width: 150,
                                     height: 100,
                                     fit: BoxFit.contain,
@@ -746,49 +489,51 @@ class _ServicesState extends State<Services> {
                     ),
                     SizedBox(height: 30),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _dataProc[2] = false;
-                              _dataProc[3] = false;
-                            });
-                          },
-                          child: Text("Atras"),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(
-                              () {
-                                if (data['firma'].toString().trim() != '' &&
-                                    data['firma'] != null) {
-                                  _dataProc[3] = true;
-                                } else {
-                                  Fluttertoast.showToast(
-                                      msg: "Debe Registrar una firma");
-                                }
-                              },
-                            );
+                          onPressed: () async {
+                            if (firma.toString().trim() != '' && firma != null) {
+                              List<MultipartFile> billetesFiles = [];
+                              for (var billete in arrbilletes) {
+                                billetesFiles.add(await MultipartFile.fromFile(
+                                  billete['image'], // Ruta del archivo de imagen
+                                  filename: billete['Serie'], // Nombre del archivo (el serial del billete)
+                                ));
+                              }
+
+                              List<MultipartFile> firma_ = [];
+                              String nombrefirma = '';
+                              if (firma != null) {
+                                nombrefirma = firma.toString().split('cache/').last; // Extraer el nombre del archivo
+                                MultipartFile firmaz = await MultipartFile.fromFile(firma, filename: nombrefirma);
+                                firma_.add(firmaz);
+                              }
+
+                              FormData formData = FormData.fromMap({
+                                "pe_etapa_atencion": 3,
+                                "pe_user_id": widget.user['user_id'],
+                                "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                                "pe_serial_envase": _controllerSerial.text,
+                                "pe_seriales_billetes": billetesFiles,
+                                "pe_ruta_firma": nombrefirma,
+                                "file": firma_
+                              });
+                              var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                              if (response.statusCode == 200) {
+                                print(response.data);
+                                Fluttertoast.showToast(msg: response.data['message']);
+                                await UpdateList(widget.item['id_pedido']);
+                              } else {
+                                print(response.statusMessage);
+                              }
+                            } else {
+                              Fluttertoast.showToast(msg: "Debe Registrar una firma");
+                            }
                           },
                           child: Text("CONFIRMAR"),
                         )
                       ],
-                    ),
-                  ],
-                )
-              : SizedBox(),
-          _dataProc[3]
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _dataProc[3] = false;
-                        });
-                      },
-                      child: Text("Atras"),
                     ),
                   ],
                 )
@@ -802,21 +547,20 @@ class _ServicesState extends State<Services> {
   final ImagePicker _picker = ImagePicker();
 
   void _addBillete() {
-    if (_controllerSerieB.text.isNotEmpty) {
-      // && _fileImage != null
+    if (_controllerSerieB.text.isNotEmpty && _fileImage != null) {
       var billete = {
         'Serie': _controllerSerieB.text,
         'image': _fileImage != null ? _fileImage!.path : null,
       };
       setState(
         () {
-          data['billetes'].add(billete);
+          arrbilletes.add(billete);
           _controllerSerieB.clear();
           _fileImage = null;
         },
       );
     } else {
-      Fluttertoast.showToast(msg: "Serie Invialida");
+      Fluttertoast.showToast(msg: "Datos Incompletos ");
     }
   }
 
@@ -829,22 +573,33 @@ class _ServicesState extends State<Services> {
     }
   }
 
-  void _addParada() {
-    if (_controllerComprobante.text.isNotEmpty &&
-        _controllerMotivo.text.isNotEmpty) {
-      var parada = {
-        'comprobante': _controllerComprobante.text,
-        'motivo': _controllerMotivo.text,
-        'image': _fileImage != null ? _fileImage!.path : null,
-      };
-      setState(
-        () {
-          data['paradas'].add(parada);
-          _controllerComprobante.clear();
-          _controllerMotivo.clear();
-          _fileImage = null;
-        },
-      );
+  void _addParada() async {
+    List<MultipartFile> files = [];
+    if (_controllerComprobante.text.isNotEmpty && selectMotivo != null) {
+      if (_fileImage != null) {
+        MultipartFile arcparada = await MultipartFile.fromFile(_fileImage!.path, filename: _fileImage!.path.split('cache/')[1]);
+        files.add(arcparada);
+      }
+      FormData formData = FormData.fromMap({
+        'pe_key_detalle_correlativo_id': comprobante['id'],
+        'pe_key_motivo_comprobante_visita_id': selectMotivo['id'],
+        'pe_ruta_foto': files.length > 0 ? _fileImage!.path.split('cache/')[1] : '',
+        'pe_key_asignacion_plan_diario_envase_id': widget.item['key_asignacion_plan_diario_envase_id'],
+        'pe_user_id': widget.user['user_id'],
+        "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+        'file': files,
+      });
+
+      var dio = Dio();
+      try {
+        var response = await dio.request('$link/api_mobile/apk_tripulación/generar_falsa_parada/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+        if (response.statusCode == 200) {
+          Navigator.pop(context);
+          Fluttertoast.showToast(msg: response.data['message']);
+        }
+      } catch (e) {
+        Fluttertoast.showToast(msg: "ERROR. Se debe cargar Foto del Local.");
+      }
     } else {
       Fluttertoast.showToast(msg: "Complete los Datos de Parada");
     }
@@ -852,23 +607,249 @@ class _ServicesState extends State<Services> {
 
   void _viewImage(String imagePath) {
     showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.file(File(imagePath)),
-              TextButton(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Image.file(File(imagePath)),
+            TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: Text('Cerrar'),
-              ),
-            ],
+                child: Text('Cerrar'))
+          ]));
+        });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+            backgroundColor: Theme.of(context).colorScheme.onPrimaryFixed,
+            title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('MICROCASH', textScaleFactor: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+              Text(DateFormat('dd MMM yyyy hh:mma', 'es_ES').format(_currentDateTime), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13))
+            ]),
+            foregroundColor: Colors.white),
+        body: SingleChildScrollView(
+          child: Container(
+            height: MediaQuery.sizeOf(context).height,
+            padding: const EdgeInsets.only(top: 16, left: 30, right: 30),
+            color: Theme.of(context).colorScheme.onPrimary,
+            child: Column(
+              children: [
+                WidgetDatos(context, widget.item),
+                if (widget.filtroStado == 1 && widget.item['key_estado_plan_id'] == 22)
+                  _selectedService == ''
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedService = 'ATENCIÓN SERVICIO';
+                                });
+                              },
+                              style: ButtonStyle(
+                                backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                              ),
+                              child: const Text('ATENCIÓN SERVICIO', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedService = 'FALSA PARADA';
+                                });
+                              },
+                              style: ButtonStyle(
+                                backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                              ),
+                              child: const Text('FALSA PARADA', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        )
+                      : Stack(children: [
+                          Container(
+                              alignment: Alignment.center,
+                              width: MediaQuery.sizeOf(context).width,
+                              padding: const EdgeInsets.all(16),
+                              color: Colors.grey[400],
+                              child: Text(_selectedService, textScaleFactor: 1, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)))
+                        ]),
+                const SizedBox(height: 16),
+                if (_selectedService.isNotEmpty)
+                  _selectedService == 'ATENCIÓN SERVICIO'
+                      ? Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildButton('Llegada\nal punto', 'fecha_hora_llegada', 1),
+                                _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2),
+                                _buildButton('Fin de\nServicio', 'fecha_hora_fin_servicio', 3),
+                                _buildButton('Salida de\nPunto', 'fecha_hora_salida', 4),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox()
+                          ],
+                        )
+                      : Container(
+                          width: MediaQuery.sizeOf(context).width,
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              TextFormField(
+                                enabled: _controllerComprobante.text.length == 0 ? true : false,
+                                controller: _controllerComprobante,
+                                decoration: const InputDecoration(
+                                  labelText: 'Comprobante Visita',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              DropdownButtonFormField(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Motivos',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: motivos.map((item) {
+                                    return DropdownMenuItem(
+                                      value: item,
+                                      child: Text(item['nombre']),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    selectMotivo = value ?? {};
+                                    // Maneja el cambio de valor
+                                  }),
+                              const SizedBox(height: 10),
+                              _fileImage != null
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Center(
+                                        child: Image.file(
+                                          _fileImage!,
+                                          height: 100,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: _takePhoto,
+                                    child: Text('Foto Local'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: _addParada,
+                                    child: Text('Confirmar'),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 10),
+                            ],
+                          ),
+                        ),
+              ],
+            ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
+
+  Future<void> UpdateList(int idPedido) async {
+    var fecha = widget.fecha;
+    var rpa = await dio.request(
+      '$link/api_mobile/apk_tripulación/listar_pedidos/?pe_user_id=${widget.user['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=22',
+      options: Options(
+        method: 'GET',
+      ),
+    );
+    setState(() {
+      widget.item = rpa.data['resultSet'].firstWhere((item) => item['id_pedido'] == idPedido);
+    });
+  }
+}
+
+Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    "Secuencias: ${item['secuencia']}      AAAHHH: ${item['aahh']}",
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    textScaleFactor: 1,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+          const SizedBox(width: 15),
+        ],
+      ),
+      Text(
+        "${item['punto_asociado']}",
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      Text(
+        item['direccion_punto'],
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      Row(
+        children: [
+          const Text(
+            "SERIAL DE ENVASE:   ",
+            style: TextStyle(
+              fontSize: 13,
+            ),
+          ),
+          Text(item['lonchera']),
+        ],
+      ),
+      ...item.entries.where((entry) => entry.key.startsWith('contacto')).map(
+            (entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value}', style: TextStyle(fontSize: 13)),
+          ),
+      Text(
+        "IMPORTE: ${item['importe']}",
+        style: const TextStyle(
+          fontSize: 13,
+        ),
+      ),
+    ],
+  );
 }
