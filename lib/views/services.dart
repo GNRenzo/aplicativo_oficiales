@@ -95,7 +95,10 @@ class _ServicesState extends State<Services> {
                     children: [
                       CircularProgressIndicator(), // Indicador circular de carga
                       SizedBox(width: 20),
-                      Text("Cargando..."),
+                      Text(
+                        "Cargando...",
+                        textScaleFactor: 1,
+                      ),
                     ],
                   ),
                 );
@@ -146,17 +149,20 @@ class _ServicesState extends State<Services> {
           child: Container(
             height: 50,
             margin: const EdgeInsets.all(5),
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               color: widget.item[key] != null ? Colors.blue : Colors.grey,
+              /*
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(30.0),
                 bottomLeft: Radius.circular(30.0),
               ),
+               */
             ),
             child: Text(
               title,
-              style: const TextStyle(color: Colors.white, fontSize: 12),
+              style: TextStyle(color: Colors.white, fontSize: MediaQuery.sizeOf(context).width * 0.032),
+              textScaleFactor: 1,
               textAlign: TextAlign.center,
               softWrap: true,
             ),
@@ -164,7 +170,8 @@ class _ServicesState extends State<Services> {
         ),
         Text(
           "${widget.item[key] != 'null' && widget.item[key] != null ? widget.item[key].toString().replaceAll(' ', '\n') : ''}",
-          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          textScaleFactor: 1,
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: MediaQuery.sizeOf(context).width * 0.032),
         ),
       ],
     );
@@ -182,7 +189,7 @@ class _ServicesState extends State<Services> {
       seriales = serialesList.join(', ');
     }
     return Container(
-      height: MediaQuery.sizeOf(context).height * 0.6,
+      height: MediaQuery.sizeOf(context).height * 0.55,
       child: Column(
         children: [
           !_dataProc[0]
@@ -190,34 +197,29 @@ class _ServicesState extends State<Services> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Divider(),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 7),
                     const Center(
                       child: Text(
                         "BILLETES SOSPECHOSOS",
                         textScaleFactor: 1,
                         maxLines: 2,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ),
                     SizedBox(height: 10),
-                    Row(
-                      children: [
-                        arrbilletes != null
-                            ? Text(
-                                "CANTIDAD DE BILLETES SOSPECHOSOS  ${arrbilletes.length}",
-                              )
-                            : SizedBox()
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: _controllerSerieB,
-                      decoration: InputDecoration(
-                        labelText: 'Serial de Billete',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
+                    Row(children: [
+                      arrbilletes != null
+                          ? Text(
+                              "CANTIDAD DE BILLETES SOSPECHOSOS  ${arrbilletes.length}",
+                              textScaleFactor: 1,
+                              style: TextStyle(fontSize: 13),
+                            )
+                          : SizedBox()
+                    ]),
+                    SizedBox(height: 12),
+                    TextFormField(controller: _controllerSerieB, decoration: InputDecoration(labelText: 'Serial de Billete', border: OutlineInputBorder())),
+                    SizedBox(height: 12),
                     _fileImage != null
                         ? Padding(
                             padding: const EdgeInsets.all(8.0),
@@ -234,15 +236,25 @@ class _ServicesState extends State<Services> {
                       children: [
                         ElevatedButton(
                           onPressed: _takePhoto,
-                          child: Text('Foto Billete'),
+                          child: Text(
+                            'Foto\nBillete',
+                            textAlign: TextAlign.center,
+                            textScaleFactor: 1,
+                          ),
                         ),
                         ElevatedButton(
                           onPressed: _addBillete,
-                          child: Text('Agregar Billete'),
+                          child: Text(
+                            'Agregar\nBillete',
+                            textAlign: TextAlign.center,
+                            textScaleFactor: 1,
+                          ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 10),
+                    SizedBox(
+                      height: 10,
+                    ),
                     arrbilletes.length > 0
                         ? Container(
                             height: int.parse(arrbilletes.length.toString()) * 50,
@@ -252,17 +264,13 @@ class _ServicesState extends State<Services> {
                               itemBuilder: (context, index) {
                                 var billete = arrbilletes[index];
                                 return ListTile(
-                                  title: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [Text('${billete['Serie']}'), Text(billete['image'] != null ? 'Ver' : 'Sin imagen')],
-                                  ),
+                                  title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('${billete['Serie']}'), Text(billete['image'] != null ? 'Ver' : 'Sin imagen')]),
                                   onTap: billete['image'] != null ? () => _viewImage(billete['image']) : null,
                                 );
                               },
                             ),
                           )
                         : SizedBox(),
-                    SizedBox(height: 10),
                     Container(
                       width: MediaQuery.sizeOf(context).width,
                       child: ElevatedButton(
@@ -366,19 +374,19 @@ class _ServicesState extends State<Services> {
                         textScaleFactor: 1,
                         maxLines: 2,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 5),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                       ),
                       child: Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.all(5.0),
+                            padding: const EdgeInsets.all(1.0),
                             child: Signature(
                               controller: sigFirma,
                               height: 220,
@@ -430,7 +438,7 @@ class _ServicesState extends State<Services> {
                               ],
                             ),
                           ),
-                          SizedBox(height: 30),
+                          SizedBox(height: 5),
                           ElevatedButton(
                             onPressed: () {
                               if (firma.toString().trim() != '' && firma != null) {
@@ -454,26 +462,21 @@ class _ServicesState extends State<Services> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Divider(),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 7),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("CS CANJE:  ${widget.item['comprobante_servicio']}"),
-                          Text("IMPORTE:  ${widget.item['importe']}"),
+                          Text(textScaleFactor: 1, "CS CANJE:  ${widget.item['comprobante_servicio']}"),
+                          Text(textScaleFactor: 1, "IMPORTE:  ${widget.item['importe']}"),
                           if (arrbilletes != null) ...[
-                            Text("BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
-                            Text("SERIALES: $seriales"),
+                            Text(textScaleFactor: 1, "BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
+                            Text(textScaleFactor: 1, "SERIALES: $seriales"),
                           ],
-                          Text("ENVASE SERIAL: ${serial}"),
-                          Text("CONFORMIDAD: ${widget.user['name']}"),
-                          SizedBox(
-                            height: 15,
-                          ),
+                          Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}"),
+                          Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.user['name']}"),
+                          const SizedBox(height: 15),
                           Center(
                             child: firma != null
                                 ? Image.file(
@@ -482,12 +485,15 @@ class _ServicesState extends State<Services> {
                                     height: 100,
                                     fit: BoxFit.contain,
                                   )
-                                : Text("Dibujar Firma"),
+                                : Text(
+                                    "Dibujar Firma",
+                                    textScaleFactor: 1,
+                                  ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 30),
+                    SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -531,7 +537,10 @@ class _ServicesState extends State<Services> {
                               Fluttertoast.showToast(msg: "Debe Registrar una firma");
                             }
                           },
-                          child: Text("CONFIRMAR"),
+                          child: Text(
+                            "CONFIRMAR",
+                            textScaleFactor: 1,
+                          ),
                         )
                       ],
                     ),
@@ -592,13 +601,30 @@ class _ServicesState extends State<Services> {
 
       var dio = Dio();
       try {
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
+          builder: (BuildContext context) {
+            return const AlertDialog(
+              content: Row(
+                children: [
+                  CircularProgressIndicator(), // Indicador circular de carga
+                  SizedBox(width: 20),
+                  Text("Cargando..."),
+                ],
+              ),
+            );
+          },
+        );
         var response = await dio.request('$link/api_mobile/apk_tripulación/generar_falsa_parada/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
         if (response.statusCode == 200) {
           Navigator.pop(context);
           Fluttertoast.showToast(msg: response.data['message']);
         }
+        Navigator.of(context).pop();
       } catch (e) {
         Fluttertoast.showToast(msg: "ERROR. Se debe cargar Foto del Local.");
+        Navigator.of(context).pop();
       }
     } else {
       Fluttertoast.showToast(msg: "Complete los Datos de Parada");
@@ -642,7 +668,7 @@ class _ServicesState extends State<Services> {
         body: SingleChildScrollView(
           child: Container(
             height: MediaQuery.sizeOf(context).height,
-            padding: const EdgeInsets.only(top: 16, left: 30, right: 30),
+            padding: const EdgeInsets.only(top: 16, left: 17, right: 17),
             color: Theme.of(context).colorScheme.onPrimary,
             child: Column(
               children: [
@@ -662,7 +688,7 @@ class _ServicesState extends State<Services> {
                                 backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
                                 foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
                               ),
-                              child: const Text('ATENCIÓN SERVICIO', style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: const Text('ATENCIÓN\nSERVICIO', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
@@ -675,7 +701,7 @@ class _ServicesState extends State<Services> {
                                 backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
                                 foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
                               ),
-                              child: const Text('FALSA PARADA', style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: const Text('FALSA\nPARADA', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                             ),
                           ],
                         )
@@ -687,22 +713,25 @@ class _ServicesState extends State<Services> {
                               color: Colors.grey[400],
                               child: Text(_selectedService, textScaleFactor: 1, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)))
                         ]),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 if (_selectedService.isNotEmpty)
                   _selectedService == 'ATENCIÓN SERVICIO'
                       ? Column(
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildButton('Llegada\nal punto', 'fecha_hora_llegada', 1),
-                                _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2),
-                                _buildButton('Fin de\nServicio', 'fecha_hora_fin_servicio', 3),
-                                _buildButton('Salida de\nPunto', 'fecha_hora_salida', 4),
-                              ],
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _buildButton('Llegada\nal punto', 'fecha_hora_llegada', 1),
+                                  _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2),
+                                  _buildButton('Fin de\nServicio', 'fecha_hora_fin_servicio', 3),
+                                  _buildButton('Salida de\nPunto', 'fecha_hora_salida', 4),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 20),
-                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox()
+                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
                           ],
                         )
                       : Container(
@@ -725,14 +754,10 @@ class _ServicesState extends State<Services> {
                                     border: OutlineInputBorder(),
                                   ),
                                   items: motivos.map((item) {
-                                    return DropdownMenuItem(
-                                      value: item,
-                                      child: Text(item['nombre']),
-                                    );
+                                    return DropdownMenuItem(value: item, child: Text(item['nombre']));
                                   }).toList(),
                                   onChanged: (value) {
                                     selectMotivo = value ?? {};
-                                    // Maneja el cambio de valor
                                   }),
                               const SizedBox(height: 10),
                               _fileImage != null
@@ -752,10 +777,18 @@ class _ServicesState extends State<Services> {
                                   ElevatedButton(
                                     onPressed: _takePhoto,
                                     child: Text('Foto Local'),
+                                    style: ButtonStyle(
+                                      backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                      foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                                    ),
                                   ),
                                   ElevatedButton(
                                     onPressed: _addParada,
                                     child: Text('Confirmar'),
+                                    style: ButtonStyle(
+                                      backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                      foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -797,12 +830,12 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
               children: [
                 Flexible(
                   child: Text(
-                    "Secuencias: ${item['secuencia']}      AAAHHH: ${item['aahh']}",
+                    "Secuencias: ${item['secuencia']}      AAHH: ${item['aahh']}",
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     textScaleFactor: 1,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
                     ),
@@ -816,16 +849,18 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
       ),
       Text(
         "${item['punto_asociado']}",
+        textScaleFactor: 1,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 13,
           color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
       ),
       Text(
         item['direccion_punto'],
+        textScaleFactor: 1,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 13,
           color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
         ),
@@ -834,6 +869,7 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
         children: [
           const Text(
             "SERIAL DE ENVASE:   ",
+            textScaleFactor: 1,
             style: TextStyle(
               fontSize: 13,
             ),
@@ -841,15 +877,17 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
           Text(item['lonchera']),
         ],
       ),
-      ...item.entries.where((entry) => entry.key.startsWith('contacto')).map(
-            (entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value}', style: TextStyle(fontSize: 13)),
-          ),
+      ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value}', textScaleFactor: 1, style: TextStyle(fontSize: 13))),
       Text(
         "IMPORTE: ${item['importe']}",
+        textScaleFactor: 1,
         style: const TextStyle(
           fontSize: 13,
         ),
       ),
+      SizedBox(
+        height: 7,
+      )
     ],
   );
 }
