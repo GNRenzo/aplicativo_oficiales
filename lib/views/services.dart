@@ -131,7 +131,7 @@ class _ServicesState extends State<Services> {
                   var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
                   if (response.statusCode == 200) {
                     Fluttertoast.showToast(msg: response.data['message']);
-                    //await UpdateList(widget.item['id_pedido']);
+                    await UpdateList(widget.item['id_pedido']);
                   } else {
                     print(response.statusMessage);
                   }
@@ -152,12 +152,6 @@ class _ServicesState extends State<Services> {
             padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               color: widget.item[key] != null ? Colors.blue : Colors.grey,
-              /*
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(30.0),
-                bottomLeft: Radius.circular(30.0),
-              ),
-               */
             ),
             child: Text(
               title,
@@ -235,6 +229,10 @@ class _ServicesState extends State<Services> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         ElevatedButton(
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                          ),
                           onPressed: _takePhoto,
                           child: Text(
                             'Foto\nBillete',
@@ -243,6 +241,10 @@ class _ServicesState extends State<Services> {
                           ),
                         ),
                         ElevatedButton(
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                          ),
                           onPressed: _addBillete,
                           child: Text(
                             'Agregar\nBillete',
@@ -274,6 +276,10 @@ class _ServicesState extends State<Services> {
                     Container(
                       width: MediaQuery.sizeOf(context).width,
                       child: ElevatedButton(
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                        ),
                         onPressed: () {
                           if (arrbilletes.length == 0) {
                             showDialog(
@@ -346,14 +352,28 @@ class _ServicesState extends State<Services> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              if (serial.toString().trim() != '' && serial != null) {
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                          ),
+                          onPressed: () async {
+                            if (serial.toString().trim() == '' || serial == null) {
+                              Fluttertoast.showToast(msg: "Debe Ingresar Serial");
+                              return;
+                            }
+                            var response = await dio.request(
+                              '$link/api_mobile/apk_tripulación/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}',
+                              options: Options(
+                                method: 'GET',
+                              ),
+                            );
+                            if (response.data['resultSet'][0]['validator']) {
+                              setState(() {
                                 _dataProc[1] = true;
-                              } else {
-                                Fluttertoast.showToast(msg: "Debe Ingresar Serial");
-                              }
-                            });
+                              });
+                            } else {
+                              Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
+                            }
                           },
                           child: Text("Siguiente"),
                         ),
@@ -472,7 +492,7 @@ class _ServicesState extends State<Services> {
                           Text(textScaleFactor: 1, "IMPORTE:  ${widget.item['importe']}"),
                           if (arrbilletes != null) ...[
                             Text(textScaleFactor: 1, "BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
-                            Text(textScaleFactor: 1, "SERIALES: $seriales"),
+                            arrbilletes.toList().length!=0?Text(textScaleFactor: 1, "SERIALES: $seriales"):SizedBox(),
                           ],
                           Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}"),
                           Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.user['name']}"),
@@ -520,11 +540,12 @@ class _ServicesState extends State<Services> {
                                 "pe_etapa_atencion": 3,
                                 "pe_user_id": widget.user['user_id'],
                                 "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                                "pe_serial_envase": _controllerSerial.text,
+                                "pe_serial_envase": serial,
                                 "pe_seriales_billetes": billetesFiles,
                                 "pe_ruta_firma": nombrefirma,
                                 "file": firma_
                               });
+                              print(serial);
                               var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
                               if (response.statusCode == 200) {
                                 print(response.data);

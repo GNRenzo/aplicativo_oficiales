@@ -102,323 +102,225 @@ class _MyHomePageState extends State<MyHomePage> {
       if (resultado['resultSet'].length > 0) {
         if (resultado['resultSet'][0]['estado_hoja_ruta'] == 23) {
           return Scaffold(
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.onPrimaryFixed,
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'MICROCASH',
-                    textScaleFactor: 1,
-                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  Text(
-                    DateFormat('dd MMM yyyy hh:mma', 'es_ES').format(_currentDateTime),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
-                  )
-                ],
-              ),
-              leading: IconButton(
-                icon: Icon(
-                  Icons.logout_rounded,
-                  color: Theme.of(context).colorScheme.tertiaryContainer,
+              appBar: AppBar(
+                backgroundColor: Theme.of(context).colorScheme.onPrimaryFixed,
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'MICROCASH',
+                      textScaleFactor: 1,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    Text(
+                      DateFormat('dd MMM yyyy hh:mma', 'es_ES').format(_currentDateTime),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                    )
+                  ],
                 ),
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage()));
-                },
+                leading: IconButton(
+                  icon: Icon(
+                    Icons.logout_rounded,
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage()));
+                  },
+                ),
+                centerTitle: true,
               ),
-              centerTitle: true,
-            ),
-            body: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: resultado != null
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
+              body: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: resultado != null
+                      ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Row(children: [
                             Container(
-                              width: MediaQuery.sizeOf(context).width * 0.2,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('RUTA: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  Text('CHOFER: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                            ),
+                                width: MediaQuery.sizeOf(context).width * 0.2,
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text('RUTA: ', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text('CHOFER: ', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)),
+                                ])),
                             SizedBox(width: 20),
                             Container(
-                              width: MediaQuery.sizeOf(context).width * 0.6,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['key_hoja_ruta'].toString()),
-                                  Text(name),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'SERVICIOS :',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('CANJE DE SENCILLO'),
-                                  Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_canje_envio_recojo'].toString()),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('RECOJOS'),
-                                  Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_recojo'].toString()),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('ENVIOS'),
-                                  Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_envio'].toString()),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 30),
-                        Container(
-                          alignment: Alignment.center,
-                          width: MediaQuery.sizeOf(context).width,
-                          padding: const EdgeInsets.all(16),
-                          color: Colors.grey[400],
-                          child: Text(
-                            "VERIFICACIÓN DE SERIALES RECIBIDOS",
-                            textScaleFactor: 1,
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        SizedBox(height: 30),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 35.0),
-                          child: Column(children: [
-                            TextFormField(
-                              enabled: !activarKm,
-                              controller: serialController,
-                              decoration: const InputDecoration(
-                                labelText: 'Serial',
-                                border: OutlineInputBorder(),
-                              ),
-                              textInputAction: TextInputAction.next,
-                            ),
-                            SizedBox(height: 20),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "SERIALES REGISTRADOS:",
-                                    textScaleFactor: 1,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    "${resultado['itFailed'] ? '' : resultado['resultSet'][0]['cantidad_envases_ruta_validados'].toString()}/${resultado['itFailed'] ? '' : resultado['resultSet'][0]['cantidad_envases_ruta'].toString()}",
-                                  ),
-                                ],
-                              ),
-                            )
+                                width: MediaQuery.sizeOf(context).width * 0.6,
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['key_hoja_ruta'].toString()), Text(name)]))
                           ]),
-                        ),
-                        SizedBox(height: 30),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton(
-                              onPressed: activarKm
-                                  ? null
-                                  : () async {
-                                      showDialog(
-                                        context: context,
-                                        barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
-                                        builder: (BuildContext context) {
-                                          return const AlertDialog(
-                                            content: Row(
-                                              children: [
-                                                CircularProgressIndicator(), // Indicador circular de carga
-                                                SizedBox(width: 20),
-                                                Text("Cargando..."),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      );
-                                      await ValidarSerial(serialController.text);
-                                      await obtenerDatosServicio();
-                                      setState(() {
-                                        serialController.text = '';
-                                      });
-                                      // Cerrar el dialogo después de que la operación termine
-                                      Navigator.of(context).pop();
-                                      Fluttertoast.showToast(msg: respValidar['resultSet'][0]['message']);
-                                    },
-                              style: ButtonStyle(
-                                backgroundColor: activarKm ? null : MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                                foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                              ),
-                              child: const Text(
-                                "Validar",
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: activarKm
-                                  ? null
-                                  : () {
-                                      //setState(() {});
-                                      Fluttertoast.showToast(msg: "En Mantenimiento");
-                                    },
-                              style: ButtonStyle(
-                                backgroundColor: activarKm ? null : MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                                foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                              ),
-                              child: const Text(
-                                "Reseteo",
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: activarKm
-                                  ? null
-                                  : () {
-                                      if (!resultado['itFailed'] && resultado['resultSet'][0]['cantidad_envases_ruta'] != resultado['resultSet'][0]['cantidad_envases_ruta_validados']) {
-                                        Fluttertoast.showToast(msg: "EXISTEN ENVASES SIN VALIDAR. POR FAVOR, VALIDAR TODOS LOS ENVASES ANTES DE DESPACHAR");
-                                      } else {
-                                        setState(() {
-                                          activarKm = true;
-                                        });
-                                      }
-                                    },
-                              style: ButtonStyle(
-                                backgroundColor: activarKm
-                                    ? null
-                                    : !resultado['itFailed'] && resultado['resultSet'][0]['cantidad_envases_ruta'] != resultado['resultSet'][0]['cantidad_envases_ruta_validados']
-                                        ? null
-                                        : MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                                foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                              ),
-                              child: const Text(
-                                "Siguiente",
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        activarKm
-                            ? Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                                child: Column(
-                                  children: [
-                                    SizedBox(height: 30),
-                                    TextFormField(
-                                      controller: serialKm,
-                                      decoration: const InputDecoration(
-                                        labelText: 'KILOMETRAJE',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      textInputAction: TextInputAction.next,
-                                    ),
-                                    SizedBox(height: 30),
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        showDialog(
-                                          context: context,
-                                          barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
-                                          builder: (BuildContext context) {
-                                            return const AlertDialog(
-                                              content: Row(
-                                                children: [
-                                                  CircularProgressIndicator(), // Indicador circular de carga
-                                                  SizedBox(width: 20),
-                                                  Text("Cargando..."),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        );
-                                        var headers = {'Content-Type': 'application/json'};
-                                        String androidId = await getAndroidId();
-                                        var data = json.encode({
-                                          "pe_user_id": userId,
-                                          "pe_fecha_atencion": fechaH,
-                                          "pe_fecha_despacho": fechaH.split(' ')[0],
-                                          "pe_hora_despacho": fechaH.split(' ')[1],
-                                          "pe_kilometraje_salida": serialKm.text,
-                                          "pe_fecha_hora_salida": fechaH.split(' ')[0],
-                                          "pe_estacion_despacho": "MÓVIL",
-                                          "pe_taquilla_despacho": androidId,
-                                          "pe_key_hoja_ruta": resultado['resultSet'][0]['key_hoja_ruta']
-                                        });
-                                        var response = await dio.request(
-                                          '$link/api_mobile/apk_tripulación/despachar_movil/',
-                                          options: Options(
-                                            method: 'POST',
-                                            headers: headers,
-                                          ),
-                                          data: data,
-                                        );
-                                        Navigator.of(context).pop();
-                                        setState(() {
-                                          if (response.statusCode == 200) {
-                                            Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
-                                            Future.delayed(Duration.zero, () {
-                                              Navigator.pushReplacement(
-                                                context,
-                                                MaterialPageRoute(builder: (context) => Pedidos(trabajador: widget.trabajador)), // Cambiar a la pantalla deseada
-                                              );
-                                            });
-                                          }
-                                        });
-                                      },
+                          SizedBox(height: 10),
+                          Text('SERVICIOS :', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)),
+                          Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [Text('CANJE DE SENCILLO'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_canje_envio_recojo'].toString())]),
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('RECOJOS'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_recojo'].toString())]),
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('ENVIOS'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_envio'].toString())])
+                              ])),
+                          SizedBox(height: 10),
+                          !activarKm
+                              ? Container(
+                                  alignment: Alignment.center,
+                                  width: MediaQuery.sizeOf(context).width,
+                                  padding: const EdgeInsets.all(16),
+                                  color: Colors.grey[400],
+                                  child: Text("VERIFICACIÓN DE SERIALES RECIBIDOS", textScaleFactor: 1, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)))
+                              : Divider(),
+                          Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 35.0, vertical: 20),
+                              child: Column(children: [
+                                !activarKm
+                                    ? TextFormField(
+                                        enabled: !activarKm,
+                                        controller: serialController,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Serial',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        textInputAction: TextInputAction.next,
+                                      )
+                                    : SizedBox(),
+                                Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5.0,vertical: 10),
+                                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                      Text("SERIALES REGISTRADOS:", textScaleFactor: 1, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                      Text(
+                                          "${resultado['itFailed'] ? '' : resultado['resultSet'][0]['cantidad_envases_ruta_validados'].toString()}/${resultado['itFailed'] ? '' : resultado['resultSet'][0]['cantidad_envases_ruta'].toString()}")
+                                    ]))
+                              ])),
+                          !activarKm
+                              ? Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                                  ElevatedButton(
+                                      onPressed: activarKm
+                                          ? null
+                                          : () async {
+                                              showDialog(
+                                                  context: context,
+                                                  barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
+                                                  builder: (BuildContext context) {
+                                                    return const AlertDialog(
+                                                        content: Row(children: [
+                                                      CircularProgressIndicator(), // Indicador circular de carga
+                                                      SizedBox(width: 20),
+                                                      Text("Cargando...")
+                                                    ]));
+                                                  });
+                                              await ValidarSerial(serialController.text);
+                                              await obtenerDatosServicio();
+                                              setState(() {
+                                                serialController.text = '';
+                                              });
+                                              // Cerrar el dialogo después de que la operación termine
+                                              Navigator.of(context).pop();
+                                              Fluttertoast.showToast(msg: respValidar['resultSet'][0]['message']);
+                                            },
                                       style: ButtonStyle(
-                                        backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                          backgroundColor: activarKm ? null : MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                                      child: const Text("Validar", textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))),
+                                  ElevatedButton(
+                                      onPressed: activarKm
+                                          ? null
+                                          : () async {
+                                              var response = await dio.request(
+                                                '$link/api_mobile/apk_tripulación/resetear_validacion_envases/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}',
+                                                options: Options(
+                                                  method: 'GET',
+                                                ),
+                                              );
+                                              await obtenerDatosServicio();
+                                              setState(() {
+                                                serialController.text = '';
+                                              });
+                                            },
+                                      style: ButtonStyle(
+                                          backgroundColor: activarKm ? null : MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                                      child: const Text("Reseteo", style: TextStyle(fontWeight: FontWeight.bold))),
+                                  ElevatedButton(
+                                      onPressed: activarKm
+                                          ? null
+                                          : () {
+                                              if (!resultado['itFailed'] && resultado['resultSet'][0]['cantidad_envases_ruta'] != resultado['resultSet'][0]['cantidad_envases_ruta_validados']) {
+                                                Fluttertoast.showToast(msg: "EXISTEN ENVASES SIN VALIDAR. POR FAVOR, VALIDAR TODOS LOS ENVASES ANTES DE DESPACHAR");
+                                              } else {
+                                                setState(() {
+                                                  activarKm = true;
+                                                });
+                                              }
+                                            },
+                                      style: ButtonStyle(
+                                        backgroundColor: activarKm
+                                            ? null
+                                            : !resultado['itFailed'] && resultado['resultSet'][0]['cantidad_envases_ruta'] != resultado['resultSet'][0]['cantidad_envases_ruta_validados']
+                                                ? null
+                                                : MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
                                         foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
                                       ),
-                                      child: const Text(
-                                        "Confirmar Despacho",
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : SizedBox()
-                      ],
-                    )
-                  : Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(22.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(),
-                          ],
-                        ),
-                      ),
-                    ),
-            ),
-          );
+                                      child: const Text("Siguiente", textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)))
+                                ])
+                              : SizedBox(),
+                          activarKm
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                                  child: Column(children: [
+                                    SizedBox(height: 20),
+                                    TextFormField(
+                                        controller: serialKm,
+                                        decoration: const InputDecoration(
+                                          labelText: 'KILOMETRAJE',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        textInputAction: TextInputAction.next),
+                                    SizedBox(height: 10),
+                                    ElevatedButton(
+                                        onPressed: () async {
+                                          showDialog(
+                                              context: context,
+                                              barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
+                                              builder: (BuildContext context) {
+                                                return const AlertDialog(
+                                                    content: Row(children: [
+                                                  CircularProgressIndicator(), // Indicador circular de carga
+                                                  SizedBox(width: 20),
+                                                  Text("Cargando...")
+                                                ]));
+                                              });
+                                          var headers = {'Content-Type': 'application/json'};
+                                          String androidId = await getAndroidId();
+                                          var data = json.encode({
+                                            "pe_user_id": userId,
+                                            "pe_fecha_atencion": fechaH,
+                                            "pe_fecha_despacho": fechaH.split(' ')[0],
+                                            "pe_hora_despacho": fechaH.split(' ')[1],
+                                            "pe_kilometraje_salida": serialKm.text,
+                                            "pe_fecha_hora_salida": fechaH.split(' ')[0],
+                                            "pe_estacion_despacho": "MÓVIL",
+                                            "pe_taquilla_despacho": androidId,
+                                            "pe_key_hoja_ruta": resultado['resultSet'][0]['key_hoja_ruta']
+                                          });
+                                          var response = await dio.request('$link/api_mobile/apk_tripulación/despachar_movil/', options: Options(method: 'POST', headers: headers), data: data);
+                                          Navigator.of(context).pop();
+                                          setState(() {
+                                            if (response.statusCode == 200) {
+                                              Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
+                                              Future.delayed(Duration.zero, () {
+                                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Pedidos(trabajador: widget.trabajador)));
+                                              });
+                                            }
+                                          });
+                                        },
+                                        style: ButtonStyle(
+                                          backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                                        ),
+                                        child: const Text("Confirmar Despacho", style: TextStyle(fontWeight: FontWeight.bold)))
+                                  ]))
+                              : SizedBox()
+                        ])
+                      : Center(
+                          child: Padding(
+                              padding: const EdgeInsets.all(22.0), child: Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator()])))));
         } else {
-          // Navegar a otra pantalla automáticamente
           Future.delayed(Duration.zero, () {
             Navigator.pushReplacement(
               context,
