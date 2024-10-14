@@ -147,9 +147,9 @@ class _ServicesState extends State<Services> {
             }
           },
           child: Container(
-            height: 50,
-            margin: const EdgeInsets.all(5),
-            padding: const EdgeInsets.all(7),
+            height: 60,
+            margin: const EdgeInsets.symmetric(horizontal: 13),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: widget.item[key] != null ? Colors.blue : Colors.grey,
             ),
