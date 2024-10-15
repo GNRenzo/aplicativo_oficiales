@@ -180,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       )
                                     : SizedBox(),
                                 Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5.0,vertical: 10),
+                                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10),
                                     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                       Text("SERIALES REGISTRADOS:", textScaleFactor: 1, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                       Text(

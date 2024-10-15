@@ -86,64 +86,66 @@ class _ServicesState extends State<Services> {
       children: [
         GestureDetector(
           onTap: () async {
-            showDialog(
-              context: context,
-              barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
-              builder: (BuildContext context) {
-                return const AlertDialog(
-                  content: Row(
-                    children: [
-                      CircularProgressIndicator(), // Indicador circular de carga
-                      SizedBox(width: 20),
-                      Text(
-                        "Cargando...",
-                        textScaleFactor: 1,
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-            print("$estado_plan  $estado_detalle");
-            String anterior = "";
-            if (index == 2) {
-              anterior = 'fecha_hora_llegada';
-            }
-            if (index == 3) {
-              anterior = 'fecha_hora_inicio_servicio';
-            }
-            if (index == 4) {
-              anterior = 'fecha_hora_fin_servicio';
-            }
-            if (index == 1 || widget.item[anterior] != null) {
-              if (widget.item[key] != null) {
-                Fluttertoast.showToast(msg: "Dato Ya Registrado");
-              } else {
-                if (index != 3) {
-                  FormData formData = FormData.fromMap({
-                    "pe_etapa_atencion": index,
-                    "pe_user_id": widget.user['user_id'],
-                    "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                    "pe_serial_envase": "",
-                    "pe_seriales_billetes": "",
-                    "pe_ruta_firma": ""
-                  });
-                  var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
-                  if (response.statusCode == 200) {
-                    Fluttertoast.showToast(msg: response.data['message']);
-                    await UpdateList(widget.item['id_pedido']);
-                  } else {
-                    print(response.statusMessage);
+            if (widget.filtroStado == 1) {
+              showDialog(
+                context: context,
+                barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
+                builder: (BuildContext context) {
+                  return const AlertDialog(
+                    content: Row(
+                      children: [
+                        CircularProgressIndicator(), // Indicador circular de carga
+                        SizedBox(width: 20),
+                        Text(
+                          "Cargando...",
+                          textScaleFactor: 1,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+              print("$estado_plan  $estado_detalle");
+              String anterior = "";
+              if (index == 2) {
+                anterior = 'fecha_hora_llegada';
+              }
+              if (index == 3) {
+                anterior = 'fecha_hora_inicio_servicio';
+              }
+              if (index == 4) {
+                anterior = 'fecha_hora_fin_servicio';
+              }
+              if (index == 1 || widget.item[anterior] != null) {
+                if (widget.item[key] != null) {
+                  Fluttertoast.showToast(msg: "Dato Ya Registrado");
+                } else {
+                  if (index != 3) {
+                    FormData formData = FormData.fromMap({
+                      "pe_etapa_atencion": index,
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                      "pe_serial_envase": "",
+                      "pe_seriales_billetes": "",
+                      "pe_ruta_firma": ""
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      await UpdateList(widget.item['id_pedido']);
+                    } else {
+                      print(response.statusMessage);
+                    }
                   }
                 }
+              } else {
+                Fluttertoast.showToast(msg: "Seleccione el paso correctamente ");
               }
-            } else {
-              Fluttertoast.showToast(msg: "Seleccione el paso correctamente ");
-            }
-            Navigator.of(context).pop();
-
-            if (index == 4) {
               Navigator.of(context).pop();
+
+              if (index == 4) {
+                Navigator.of(context).pop();
+              }
             }
           },
           child: Container(
@@ -492,7 +494,7 @@ class _ServicesState extends State<Services> {
                           Text(textScaleFactor: 1, "IMPORTE:  ${widget.item['importe']}"),
                           if (arrbilletes != null) ...[
                             Text(textScaleFactor: 1, "BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
-                            arrbilletes.toList().length!=0?Text(textScaleFactor: 1, "SERIALES: $seriales"):SizedBox(),
+                            arrbilletes.toList().length != 0 ? Text(textScaleFactor: 1, "SERIALES: $seriales") : SizedBox(),
                           ],
                           Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}"),
                           Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.user['name']}"),
@@ -888,16 +890,28 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
       ),
       Row(
         children: [
-          const Text(
-            "SERIAL DE ENVASE:   ",
+          Text(
+            "SERIAL DEL MALETÍN: ",
             textScaleFactor: 1,
-            style: TextStyle(
-              fontSize: 13,
-            ),
+            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
           ),
           Text(item['lonchera']),
         ],
       ),
+      Row(children: [
+        Text(
+          "ENVASE: ",
+          textScaleFactor: 1,
+          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+        ),
+        Flexible(
+          child: Text(
+            "${item['envase']}",
+            textScaleFactor: 1,
+            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary),
+          ),
+        )
+      ]),
       ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value}', textScaleFactor: 1, style: TextStyle(fontSize: 13))),
       Text(
         "IMPORTE: ${item['importe']}",
