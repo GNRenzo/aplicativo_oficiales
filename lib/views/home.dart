@@ -263,7 +263,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               ? Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 30.0),
                                   child: Column(children: [
-                                    SizedBox(height: 20),
+                                    const SizedBox(height: 20),
                                     TextFormField(
                                         controller: serialKm,
                                         decoration: const InputDecoration(
@@ -271,7 +271,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                           border: OutlineInputBorder(),
                                         ),
                                         textInputAction: TextInputAction.next),
-                                    SizedBox(height: 10),
+                                    const SizedBox(height: 10),
                                     ElevatedButton(
                                         onPressed: () async {
                                           showDialog(
@@ -293,7 +293,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             "pe_fecha_despacho": fechaH.split(' ')[0],
                                             "pe_hora_despacho": fechaH.split(' ')[1],
                                             "pe_kilometraje_salida": serialKm.text,
-                                            "pe_fecha_hora_salida": fechaH.split(' ')[0],
+                                            "pe_fecha_hora_salida": fechaH,
                                             "pe_estacion_despacho": "MÓVIL",
                                             "pe_taquilla_despacho": androidId,
                                             "pe_key_hoja_ruta": resultado['resultSet'][0]['key_hoja_ruta']
