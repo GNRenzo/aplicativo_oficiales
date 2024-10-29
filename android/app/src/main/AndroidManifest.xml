@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <application
-        android:label="M. Tripulación"
+        android:label="M. Tripulación QAS"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
