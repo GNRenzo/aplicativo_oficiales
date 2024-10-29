@@ -134,11 +134,6 @@ class _LoginPageState extends State<LoginPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Expanded(child: SizedBox()),
-                                link.contains('qas')?Text(
-                                  "QAS",
-                                  style: TextStyle(fontFamily: 'inter', fontWeight: FontWeight.w700, fontSize: 25, color: Theme.of(context).colorScheme.onErrorContainer),
-                                  textAlign: TextAlign.center,
-                                ):SizedBox(),
                                 Column(
                                   children: [
                                     Column(
@@ -271,11 +266,6 @@ class _LoginPageState extends State<LoginPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Expanded(child: SizedBox()),
-                          link.contains('qas')?Text(
-                            "QAS",
-                            style: TextStyle(fontFamily: 'inter', fontWeight: FontWeight.w700, fontSize: 25, color: Theme.of(context).colorScheme.onErrorContainer),
-                            textAlign: TextAlign.center,
-                          ):SizedBox(),
                           Column(
                             children: [
                               Column(
