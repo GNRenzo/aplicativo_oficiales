@@ -149,15 +149,15 @@ class _ServicesState extends State<Services> {
             }
           },
           child: Container(
-            height: 60,
-            margin: const EdgeInsets.symmetric(horizontal: 13),
-            padding: const EdgeInsets.all(8),
+            height: 45,
+            margin: const EdgeInsets.symmetric(horizontal: 11),
+            alignment: AlignmentDirectional.center,
             decoration: BoxDecoration(
               color: widget.item[key] != null ? Colors.blue : Colors.grey,
             ),
             child: Text(
               title,
-              style: TextStyle(color: Colors.white, fontSize: MediaQuery.sizeOf(context).width * 0.032),
+              style: TextStyle(color: Colors.white, fontSize: MediaQuery.sizeOf(context).width * 0.030),
               textScaleFactor: 1,
               textAlign: TextAlign.center,
               softWrap: true,
@@ -183,6 +183,10 @@ class _ServicesState extends State<Services> {
         serialesList.add(billete['Serie']);
       }
       seriales = serialesList.join(', ');
+    }
+    if (widget.item['key_modalidad_servicio_id'] != 1) {
+      _dataProc[0] = true;
+      _dataProc[1] = true;
     }
     return Container(
       height: MediaQuery.sizeOf(context).height * 0.55,
@@ -492,12 +496,12 @@ class _ServicesState extends State<Services> {
                         children: [
                           Text(textScaleFactor: 1, "CS CANJE:  ${widget.item['comprobante_servicio']}"),
                           Text(textScaleFactor: 1, "IMPORTE:  ${widget.item['importe']}"),
-                          if (arrbilletes != null) ...[
+                          if (arrbilletes.length > 0) ...[
                             Text(textScaleFactor: 1, "BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
                             arrbilletes.toList().length != 0 ? Text(textScaleFactor: 1, "SERIALES: $seriales") : SizedBox(),
                           ],
-                          Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}"),
-                          Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.user['name']}"),
+                          serial.length != 0 ? Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}") : SizedBox(),
+                          Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.item['contacto1'].toString().split('[')[0]}"),
                           const SizedBox(height: 15),
                           Center(
                             child: firma != null
@@ -741,18 +745,25 @@ class _ServicesState extends State<Services> {
                   _selectedService == 'ATENCIÓN SERVICIO'
                       ? Column(
                           children: [
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildButton('Llegada\nal punto', 'fecha_hora_llegada', 1),
-                                  _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2),
-                                  _buildButton('Fin de\nServicio', 'fecha_hora_fin_servicio', 3),
-                                  _buildButton('Salida de\nPunto', 'fecha_hora_salida', 4),
-                                ],
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(child: _buildButton('Llegada\npunto', 'fecha_hora_llegada', 1)),
+                                Expanded(child: _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2)),
+                                Expanded(child: _buildButton('Fin\nServicio', 'fecha_hora_fin_servicio', 3)),
+                                Expanded(child: _buildButton('Salida\nPunto', 'fecha_hora_salida', 4)),
+                              ],
                             ),
+                            /*Wrap(
+                              spacing: 1, // Espacio horizontal entre los botones
+                              runSpacing: 2, // Espacio vertical entre las líneas de botones
+                              children: [
+                                _buildButton('Llegada\nal punto', 'fecha_hora_llegada', 1),
+                                _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2),
+                                _buildButton('Fin de\nServicio', 'fecha_hora_fin_servicio', 3),
+                                _buildButton('Salida de\nPunto', 'fecha_hora_salida', 4),
+                              ],
+                            ),*/
                             const SizedBox(height: 20),
                             _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
                           ],
@@ -912,7 +923,9 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
           ),
         )
       ]),
-      ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value}', textScaleFactor: 1, style: TextStyle(fontSize: 13))),
+      ...item.entries
+          .where((entry) => entry.key.startsWith('contacto'))
+          .map((entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value.toString().split('[')[0]}', textScaleFactor: 1, style: const TextStyle(fontSize: 13))),
       Text(
         "IMPORTE: ${item['importe']}",
         textScaleFactor: 1,
