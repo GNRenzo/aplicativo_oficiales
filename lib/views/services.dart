@@ -184,6 +184,10 @@ class _ServicesState extends State<Services> {
       }
       seriales = serialesList.join(', ');
     }
+    if (widget.item['key_modalidad_servicio_id'] == 1) {
+      _dataProc[0] = true;
+      _dataProc[1] = true;
+    }
     return Container(
       height: MediaQuery.sizeOf(context).height * 0.55,
       child: Column(
@@ -492,12 +496,12 @@ class _ServicesState extends State<Services> {
                         children: [
                           Text(textScaleFactor: 1, "CS CANJE:  ${widget.item['comprobante_servicio']}"),
                           Text(textScaleFactor: 1, "IMPORTE:  ${widget.item['importe']}"),
-                          if (arrbilletes != null) ...[
+                          if (arrbilletes.length > 0) ...[
                             Text(textScaleFactor: 1, "BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
                             arrbilletes.toList().length != 0 ? Text(textScaleFactor: 1, "SERIALES: $seriales") : SizedBox(),
                           ],
-                          Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}"),
-                          Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.user['name']}"),
+                          serial.length != 0 ? Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}") : SizedBox(),
+                          Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.item['contacto1'].toString().split('[')[0]}"),
                           const SizedBox(height: 15),
                           Center(
                             child: firma != null
@@ -912,7 +916,9 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
           ),
         )
       ]),
-      ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value}', textScaleFactor: 1, style: TextStyle(fontSize: 13))),
+      ...item.entries
+          .where((entry) => entry.key.startsWith('contacto'))
+          .map((entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value.toString().split('[')[0]}', textScaleFactor: 1, style: const TextStyle(fontSize: 13))),
       Text(
         "IMPORTE: ${item['importe']}",
         textScaleFactor: 1,
