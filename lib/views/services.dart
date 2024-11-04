@@ -184,7 +184,7 @@ class _ServicesState extends State<Services> {
       }
       seriales = serialesList.join(', ');
     }
-    if (widget.item['key_modalidad_servicio_id'] == 1) {
+    if (widget.item['key_modalidad_servicio_id'] != 1) {
       _dataProc[0] = true;
       _dataProc[1] = true;
     }
