@@ -134,16 +134,18 @@ class _ServicesState extends State<Services> {
                       Fluttertoast.showToast(msg: response.data['message']);
                       await UpdateList(widget.item['id_pedido']);
                     } else {
-                      print(response.statusMessage);
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
                     }
                   }
                 }
               } else {
                 Fluttertoast.showToast(msg: "Seleccione el paso correctamente ");
               }
-              Navigator.of(context).pop();
 
               if (index == 4) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              } else {
                 Navigator.of(context).pop();
               }
             }
