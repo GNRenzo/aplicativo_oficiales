@@ -132,21 +132,19 @@ class _ServicesState extends State<Services> {
                     var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
                       Fluttertoast.showToast(msg: response.data['message']);
-                      await UpdateList(widget.item['id_pedido']);
+                      if (index != 4) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
+                      }
                     } else {
                       Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
                     }
+                    Navigator.of(context).pop();
                   }
                 }
               } else {
                 Fluttertoast.showToast(msg: "Seleccione el paso correctamente ");
-              }
-
-              if (index == 4) {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              } else {
-                Navigator.of(context).pop();
               }
             }
           },
