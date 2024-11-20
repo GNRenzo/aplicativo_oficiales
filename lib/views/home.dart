@@ -100,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
       return Scaffold(body: Center(child: CircularProgressIndicator()));
     } else {
       if (resultado['resultSet'].length > 0) {
-        if (resultado['resultSet'][0]['estado_hoja_ruta'] == 23) {
+        if (resultado['resultSet'][resultado['resultSet'].length-1]['estado_hoja_ruta'] == 23) {
           return Scaffold(
               appBar: AppBar(
                 backgroundColor: Theme.of(context).colorScheme.onPrimaryFixed,
