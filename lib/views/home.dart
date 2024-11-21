@@ -48,12 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> obtenerDatosServicio() async {
     var fecha = fechaH;
-    var response = await dio.request(
-      '$link/api_mobile/apk_tripulación/contar_tipo_servicio/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}',
-      options: Options(
-        method: 'GET',
-      ),
-    );
+    var response = await dio.request('$link/api_mobile/apk_tripulación/contar_tipo_servicio/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}', options: Options(method: 'GET'));
     if (response.statusCode == 200) {
       resultado = response.data;
     }
@@ -61,12 +56,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> ValidarSerial(String serial) async {
     var fecha = fechaH;
-    var response = await dio.request(
-      '$link/api_mobile/apk_tripulación/validar_correlativo_ruta/?pe_user_id=${widget.trabajador['user_id']}&pe_correlativo=$serial&pe_fecha_atencion=${fecha.split(' ')[0]}',
-      options: Options(
-        method: 'GET',
-      ),
-    );
+    var response = await dio.request('$link/api_mobile/apk_tripulación/validar_correlativo_ruta/?pe_user_id=${widget.trabajador['user_id']}&pe_correlativo=$serial&pe_fecha_atencion=${fecha.split(' ')[0]}',
+        options: Options(method: 'GET'));
     if (response.statusCode == 200) {
       respValidar = response.data;
     }
@@ -100,33 +91,24 @@ class _MyHomePageState extends State<MyHomePage> {
       return Scaffold(body: Center(child: CircularProgressIndicator()));
     } else {
       if (resultado['resultSet'].length > 0) {
-        if (resultado['resultSet'][resultado['resultSet'].length-1]['estado_hoja_ruta'] == 23) {
+        int index_ = resultado['resultSet'].indexWhere((item) => item['key_estado_hoja_id'] == 23);
+        if (index_ != -1) {
           return Scaffold(
               appBar: AppBar(
                 backgroundColor: Theme.of(context).colorScheme.onPrimaryFixed,
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'MICROCASH',
-                      textScaleFactor: 1,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w600, fontSize: 14),
-                    ),
-                    Text(
-                      DateFormat('dd MMM yyyy hh:mma', 'es_ES').format(_currentDateTime),
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
-                    )
-                  ],
-                ),
-                leading: IconButton(
-                  icon: Icon(
-                    Icons.logout_rounded,
-                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text(
+                    'MICROCASH',
+                    textScaleFactor: 1,
+                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w600, fontSize: 14),
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage()));
-                  },
-                ),
+                  Text(DateFormat('dd MMM yyyy hh:mma', 'es_ES').format(_currentDateTime), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13))
+                ]),
+                leading: IconButton(
+                    icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.tertiaryContainer),
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage()));
+                    }),
                 centerTitle: true,
               ),
               body: Padding(
@@ -136,14 +118,13 @@ class _MyHomePageState extends State<MyHomePage> {
                           Row(children: [
                             Container(
                                 width: MediaQuery.sizeOf(context).width * 0.2,
-                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text('RUTA: ', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)),
-                                  Text('CHOFER: ', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)),
-                                ])),
-                            SizedBox(width: 20),
+                                child: const Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [Text('RUTA: ', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)), Text('CHOFER: ', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))])),
+                            const SizedBox(width: 20),
                             Container(
                                 width: MediaQuery.sizeOf(context).width * 0.6,
-                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['key_hoja_ruta'].toString()), Text(name)]))
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(resultado['itFailed'] ? '' : resultado['resultSet'][index_]['key_hoja_ruta'].toString()), Text(name)]))
                           ]),
                           SizedBox(height: 10),
                           Text('SERVICIOS :', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)),
@@ -152,9 +133,9 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [Text('CANJE DE SENCILLO'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_canje_envio_recojo'].toString())]),
-                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('RECOJOS'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_recojo'].toString())]),
-                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('ENVIOS'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][0]['count_envio'].toString())])
+                                    children: [Text('CANJE DE SENCILLO'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][index_]['count_canje_envio_recojo'].toString())]),
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('RECOJOS'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][index_]['count_recojo'].toString())]),
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('ENVIOS'), Text(resultado['itFailed'] ? '' : resultado['resultSet'][index_]['count_envio'].toString())])
                               ])),
                           SizedBox(height: 10),
                           !activarKm
@@ -170,21 +151,14 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: Column(children: [
                                 !activarKm
                                     ? TextFormField(
-                                        enabled: !activarKm,
-                                        controller: serialController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Serial',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        textInputAction: TextInputAction.next,
-                                      )
+                                        enabled: !activarKm, controller: serialController, decoration: const InputDecoration(labelText: 'Serial', border: OutlineInputBorder()), textInputAction: TextInputAction.next)
                                     : SizedBox(),
                                 Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10),
                                     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                       Text("SERIALES REGISTRADOS:", textScaleFactor: 1, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                       Text(
-                                          "${resultado['itFailed'] ? '' : resultado['resultSet'][0]['cantidad_envases_ruta_validados'].toString()}/${resultado['itFailed'] ? '' : resultado['resultSet'][0]['cantidad_envases_ruta'].toString()}")
+                                          "${resultado['itFailed'] ? '' : resultado['resultSet'][index_]['cantidad_envases_ruta_validados'].toString()}/${resultado['itFailed'] ? '' : resultado['resultSet'][index_]['cantidad_envases_ruta'].toString()}")
                                     ]))
                               ])),
                           !activarKm
@@ -222,11 +196,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                           ? null
                                           : () async {
                                               var response = await dio.request(
-                                                '$link/api_mobile/apk_tripulación/resetear_validacion_envases/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}',
-                                                options: Options(
-                                                  method: 'GET',
-                                                ),
-                                              );
+                                                  '$link/api_mobile/apk_tripulación/resetear_validacion_envases/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}',
+                                                  options: Options(method: 'GET'));
                                               await obtenerDatosServicio();
                                               setState(() {
                                                 serialController.text = '';
@@ -240,7 +211,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       onPressed: activarKm
                                           ? null
                                           : () {
-                                              if (!resultado['itFailed'] && resultado['resultSet'][0]['cantidad_envases_ruta'] != resultado['resultSet'][0]['cantidad_envases_ruta_validados']) {
+                                              if (!resultado['itFailed'] && resultado['resultSet'][index_]['cantidad_envases_ruta'] != resultado['resultSet'][index_]['cantidad_envases_ruta_validados']) {
                                                 Fluttertoast.showToast(msg: "EXISTEN ENVASES SIN VALIDAR. POR FAVOR, VALIDAR TODOS LOS ENVASES ANTES DE DESPACHAR");
                                               } else {
                                                 setState(() {
@@ -249,13 +220,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                               }
                                             },
                                       style: ButtonStyle(
-                                        backgroundColor: activarKm
-                                            ? null
-                                            : !resultado['itFailed'] && resultado['resultSet'][0]['cantidad_envases_ruta'] != resultado['resultSet'][0]['cantidad_envases_ruta_validados']
-                                                ? null
-                                                : MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                                        foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                                      ),
+                                          backgroundColor: activarKm
+                                              ? null
+                                              : !resultado['itFailed'] && resultado['resultSet'][index_]['cantidad_envases_ruta'] != resultado['resultSet'][index_]['cantidad_envases_ruta_validados']
+                                                  ? null
+                                                  : MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
                                       child: const Text("Siguiente", textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)))
                                 ])
                               : SizedBox(),
@@ -264,13 +234,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   padding: const EdgeInsets.symmetric(horizontal: 30.0),
                                   child: Column(children: [
                                     const SizedBox(height: 20),
-                                    TextFormField(
-                                        controller: serialKm,
-                                        decoration: const InputDecoration(
-                                          labelText: 'KILOMETRAJE',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        textInputAction: TextInputAction.next),
+                                    TextFormField(controller: serialKm, decoration: const InputDecoration(labelText: 'KILOMETRAJE', border: OutlineInputBorder()), textInputAction: TextInputAction.next),
                                     const SizedBox(height: 10),
                                     ElevatedButton(
                                         onPressed: () async {
@@ -296,7 +260,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             "pe_fecha_hora_salida": fechaH,
                                             "pe_estacion_despacho": "MÓVIL",
                                             "pe_taquilla_despacho": androidId,
-                                            "pe_key_hoja_ruta": resultado['resultSet'][0]['key_hoja_ruta']
+                                            "pe_key_hoja_ruta": resultado['resultSet'][index_]['key_hoja_ruta']
                                           });
                                           var response = await dio.request('$link/api_mobile/apk_tripulación/despachar_movil/', options: Options(method: 'POST', headers: headers), data: data);
                                           Navigator.of(context).pop();
@@ -310,9 +274,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                           });
                                         },
                                         style: ButtonStyle(
-                                          backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                                        ),
+                                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
                                         child: const Text("Confirmar Despacho", style: TextStyle(fontWeight: FontWeight.bold)))
                                   ]))
                               : SizedBox()

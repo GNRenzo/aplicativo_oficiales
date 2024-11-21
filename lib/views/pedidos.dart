@@ -29,7 +29,6 @@ class _PedidoState extends State<Pedidos> {
 
   @override
   void initState() {
-    _UpdateList();
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 2), (Timer timer) {
       setState(() {

@@ -61,30 +61,19 @@ class _ServicesState extends State<Services> {
   }
 
   obtenerDatos() async {
-    var response = await dio.request(
-      '$link/api_mobile/apk_tripulación/siguiente_cv/',
-      options: Options(
-        method: 'GET',
-      ),
-    );
+    var response = await dio.request('$link/api_mobile/apk_tripulación/siguiente_cv/', options: Options(method: 'GET'));
     comprobante = (response.data['resultSet'][0]) ?? {};
     _controllerComprobante.text = (response.data['resultSet'][0]['correlativo']) ?? {};
 
-    var response2 = await dio.request(
-      '$link/tablas/motivo/listar/?key_estado_id=1',
-      options: Options(
-        method: 'GET',
-      ),
-    );
+    var response2 = await dio.request('$link/tablas/motivo/listar/?key_estado_id=1', options: Options(method: 'GET'));
     motivos = response2.data['resultSet'];
   }
 
   List<bool> _dataProc = [false, false, false, false];
 
   Widget _buildButton(String title, String key, int index) {
-    return Column(
-      children: [
-        GestureDetector(
+    return Column(children: [
+      GestureDetector(
           onTap: () async {
             if (widget.filtroStado == 1) {
               showDialog(
@@ -149,28 +138,16 @@ class _ServicesState extends State<Services> {
             }
           },
           child: Container(
-            height: 45,
-            margin: const EdgeInsets.symmetric(horizontal: 11),
-            alignment: AlignmentDirectional.center,
-            decoration: BoxDecoration(
-              color: widget.item[key] != null ? Colors.blue : Colors.grey,
-            ),
-            child: Text(
-              title,
-              style: TextStyle(color: Colors.white, fontSize: MediaQuery.sizeOf(context).width * 0.030),
-              textScaleFactor: 1,
-              textAlign: TextAlign.center,
-              softWrap: true,
-            ),
-          ),
-        ),
-        Text(
-          "${widget.item[key] != 'null' && widget.item[key] != null ? widget.item[key].toString().replaceAll(' ', '\n') : ''}",
-          textScaleFactor: 1,
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: MediaQuery.sizeOf(context).width * 0.032),
-        ),
-      ],
-    );
+              height: 45,
+              margin: const EdgeInsets.symmetric(horizontal: 11),
+              alignment: AlignmentDirectional.center,
+              decoration: BoxDecoration(
+                color: widget.item[key] != null ? Colors.blue : Colors.grey,
+              ),
+              child: Text(title, style: TextStyle(color: Colors.white, fontSize: MediaQuery.sizeOf(context).width * 0.030), textScaleFactor: 1, textAlign: TextAlign.center, softWrap: true))),
+      Text("${widget.item[key] != 'null' && widget.item[key] != null ? widget.item[key].toString().replaceAll(' ', '\n') : ''}",
+          textScaleFactor: 1, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: MediaQuery.sizeOf(context).width * 0.032))
+    ]);
   }
 
   SignatureController sigFirma = SignatureController(penStrokeWidth: 1.5, penColor: Colors.black, exportBackgroundColor: Colors.white, exportPenColor: Colors.black);
@@ -198,25 +175,9 @@ class _ServicesState extends State<Services> {
                   children: [
                     const Divider(),
                     const SizedBox(height: 7),
-                    const Center(
-                      child: Text(
-                        "BILLETES SOSPECHOSOS",
-                        textScaleFactor: 1,
-                        maxLines: 2,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    const Center(child: Text("BILLETES SOSPECHOSOS", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
                     SizedBox(height: 10),
-                    Row(children: [
-                      arrbilletes != null
-                          ? Text(
-                              "CANTIDAD DE BILLETES SOSPECHOSOS  ${arrbilletes.length}",
-                              textScaleFactor: 1,
-                              style: TextStyle(fontSize: 13),
-                            )
-                          : SizedBox()
-                    ]),
+                    Row(children: [arrbilletes != null ? Text("CANTIDAD DE BILLETES SOSPECHOSOS  ${arrbilletes.length}", textScaleFactor: 1, style: TextStyle(fontSize: 13)) : SizedBox()]),
                     SizedBox(height: 12),
                     TextFormField(controller: _controllerSerieB, decoration: InputDecoration(labelText: 'Serial de Billete', border: OutlineInputBorder())),
                     SizedBox(height: 12),
@@ -224,96 +185,66 @@ class _ServicesState extends State<Services> {
                         ? Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Center(
-                              child: Image.file(
-                                _fileImage!,
-                                height: 120,
-                              ),
-                            ),
-                          )
+                                child: Image.file(
+                              _fileImage!,
+                              height: 120,
+                            )))
                         : Container(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton(
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                      ElevatedButton(
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                          ),
+                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
                           onPressed: _takePhoto,
-                          child: Text(
-                            'Foto\nBillete',
-                            textAlign: TextAlign.center,
-                            textScaleFactor: 1,
-                          ),
-                        ),
-                        ElevatedButton(
+                          child: Text('Foto\nBillete', textAlign: TextAlign.center, textScaleFactor: 1)),
+                      ElevatedButton(
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                          ),
+                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
                           onPressed: _addBillete,
-                          child: Text(
-                            'Agregar\nBillete',
-                            textAlign: TextAlign.center,
-                            textScaleFactor: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
+                          child: Text('Agregar\nBillete', textAlign: TextAlign.center, textScaleFactor: 1))
+                    ]),
+                    SizedBox(height: 10),
                     arrbilletes.length > 0
                         ? Container(
                             height: int.parse(arrbilletes.length.toString()) * 50,
                             child: ListView.builder(
-                              physics: BouncingScrollPhysics(),
-                              itemCount: arrbilletes.length,
-                              itemBuilder: (context, index) {
-                                var billete = arrbilletes[index];
-                                return ListTile(
-                                  title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('${billete['Serie']}'), Text(billete['image'] != null ? 'Ver' : 'Sin imagen')]),
-                                  onTap: billete['image'] != null ? () => _viewImage(billete['image']) : null,
-                                );
-                              },
-                            ),
-                          )
+                                physics: BouncingScrollPhysics(),
+                                itemCount: arrbilletes.length,
+                                itemBuilder: (context, index) {
+                                  var billete = arrbilletes[index];
+                                  return ListTile(
+                                      title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('${billete['Serie']}'), Text(billete['image'] != null ? 'Ver' : 'Sin imagen')]),
+                                      onTap: billete['image'] != null ? () => _viewImage(billete['image']) : null);
+                                }))
                         : SizedBox(),
                     Container(
                       width: MediaQuery.sizeOf(context).width,
                       child: ElevatedButton(
                         style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                        ),
+                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
                         onPressed: () {
                           if (arrbilletes.length == 0) {
                             showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text("¿Estás seguro?"),
-                                  content: Text("No hay billetes en la lista. ¿Deseas continuar?"),
-                                  actions: [
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(title: Text("¿Estás seguro?"), content: Text("No hay billetes en la lista. ¿Deseas continuar?"), actions: [
                                     TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: Text("Cancelar"),
-                                    ),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text("Cancelar")),
                                     TextButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _dataProc[0] = true;
-                                        });
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: Text("Continuar"),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
+                                        onPressed: () {
+                                          setState(() {
+                                            _dataProc[0] = true;
+                                          });
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text("Continuar"))
+                                  ]);
+                                });
                           } else {
                             setState(() {
                               _dataProc[0] = true;
@@ -327,66 +258,41 @@ class _ServicesState extends State<Services> {
                 )
               : SizedBox(),
           _dataProc[0] && !_dataProc[1]
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Divider(),
-                    const SizedBox(height: 10),
-                    const Center(
-                      child: Text(
-                        "REGISTRE SERIAL DE ENVASE\nMICROCASH",
-                        textScaleFactor: 1,
-                        maxLines: 2,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    TextFormField(
+              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  const Center(child: Text("REGISTRE SERIAL DE ENVASE\nMICROCASH", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                  const SizedBox(height: 40),
+                  TextFormField(
                       controller: _controllerSerial,
-                      decoration: const InputDecoration(
-                        labelText: 'Número de Serial',
-                        border: OutlineInputBorder(),
-                      ),
+                      decoration: const InputDecoration(labelText: 'Número de Serial', border: OutlineInputBorder()),
                       onChanged: (value) {
                         serial = value;
                       },
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 40),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        ElevatedButton(
-                          style: ButtonStyle(
+                      textInputAction: TextInputAction.next),
+                  const SizedBox(height: 40),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                    ElevatedButton(
+                        style: ButtonStyle(
                             backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
-                          ),
-                          onPressed: () async {
-                            if (serial.toString().trim() == '' || serial == null) {
-                              Fluttertoast.showToast(msg: "Debe Ingresar Serial");
-                              return;
-                            }
-                            var response = await dio.request(
-                              '$link/api_mobile/apk_tripulación/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}',
-                              options: Options(
-                                method: 'GET',
-                              ),
-                            );
-                            if (response.data['resultSet'][0]['validator']) {
-                              setState(() {
-                                _dataProc[1] = true;
-                              });
-                            } else {
-                              Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
-                            }
-                          },
-                          child: Text("Siguiente"),
-                        ),
-                      ],
-                    )
-                  ],
-                )
+                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                        onPressed: () async {
+                          if (serial.toString().trim() == '' || serial == null) {
+                            Fluttertoast.showToast(msg: "Debe Ingresar Serial");
+                            return;
+                          }
+                          var response = await dio.request('$link/api_mobile/apk_tripulación/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}', options: Options(method: 'GET'));
+                          if (response.data['resultSet'][0]['validator']) {
+                            setState(() {
+                              _dataProc[1] = true;
+                            });
+                          } else {
+                            Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
+                          }
+                        },
+                        child: Text("Siguiente"))
+                  ])
+                ])
               : SizedBox(),
           _dataProc[1] && !_dataProc[2]
               ? Column(
@@ -394,92 +300,62 @@ class _ServicesState extends State<Services> {
                   children: [
                     const Divider(),
                     const SizedBox(height: 10),
-                    const Center(
-                      child: Text(
-                        "FIRMA DEL CONTACTO",
-                        textScaleFactor: 1,
-                        maxLines: 2,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    const Center(child: Text("FIRMA DEL CONTACTO", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
                     const SizedBox(height: 5),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(26),
-                      ),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(1.0),
-                            child: Signature(
-                              controller: sigFirma,
-                              height: 220,
-                              backgroundColor: Colors.grey.shade100,
-                            ),
-                          ),
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(26)),
+                        child: Column(children: [
+                          Padding(padding: const EdgeInsets.all(1.0), child: Signature(controller: sigFirma, height: 220, backgroundColor: Colors.grey.shade100)),
                           Container(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              mainAxisSize: MainAxisSize.max,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.clear, color: Colors.red),
-                                  onPressed: () {
-                                    sigFirma.clear();
-                                    firma = null;
-                                  },
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.undo, color: Colors.amber),
-                                  onPressed: () {
-                                    sigFirma.undo();
-                                  },
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.redo, color: Colors.amber),
-                                  onPressed: () {
-                                    sigFirma.redo();
-                                  },
-                                ),
-                                IconButton(
-                                  onPressed: () async {
-                                    if (sigFirma.isEmpty) {
-                                      Fluttertoast.showToast(msg: "No Existe Firma para Registrar");
-                                      return;
-                                    }
-                                    Uint8List recorder = await sigFirma.toPngBytes() ?? Uint8List(0);
-                                    final tempDir = await getTemporaryDirectory();
-                                    final filePath = '${tempDir.path}/firma_${DateTime.now().toString().split('.')[0].replaceAll('-', '').replaceAll(':', '').replaceAll(' ', '')}.jpg';
-                                    var image = ima.decodeImage(Uint8List.fromList(recorder));
-                                    File(filePath).writeAsBytesSync(ima.encodePng(image!));
-                                    setState(() {
-                                      firma = filePath;
-                                    });
-                                    Fluttertoast.showToast(msg: "Firma Capturada");
-                                  },
-                                  icon: Icon(Icons.save_as_outlined, color: Colors.blue),
-                                ),
-                              ],
-                            ),
-                          ),
+                              child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, mainAxisSize: MainAxisSize.max, children: [
+                            IconButton(
+                                icon: Icon(Icons.clear, color: Colors.red),
+                                onPressed: () {
+                                  sigFirma.clear();
+                                  firma = null;
+                                }),
+                            IconButton(
+                                icon: Icon(Icons.undo, color: Colors.amber),
+                                onPressed: () {
+                                  sigFirma.undo();
+                                }),
+                            IconButton(
+                                icon: Icon(Icons.redo, color: Colors.amber),
+                                onPressed: () {
+                                  sigFirma.redo();
+                                }),
+                            IconButton(
+                                onPressed: () async {
+                                  if (sigFirma.isEmpty) {
+                                    Fluttertoast.showToast(msg: "No Existe Firma para Registrar");
+                                    return;
+                                  }
+                                  Uint8List recorder = await sigFirma.toPngBytes() ?? Uint8List(0);
+                                  final tempDir = await getTemporaryDirectory();
+                                  final filePath = '${tempDir.path}/firma_${DateTime.now().toString().split('.')[0].replaceAll('-', '').replaceAll(':', '').replaceAll(' ', '')}.jpg';
+                                  var image = ima.decodeImage(Uint8List.fromList(recorder));
+                                  File(filePath).writeAsBytesSync(ima.encodePng(image!));
+                                  setState(() {
+                                    firma = filePath;
+                                  });
+                                  Fluttertoast.showToast(msg: "Firma Capturada");
+                                },
+                                icon: Icon(Icons.save_as_outlined, color: Colors.blue))
+                          ])),
                           SizedBox(height: 5),
                           ElevatedButton(
-                            onPressed: () {
-                              if (firma.toString().trim() != '' && firma != null) {
-                                setState(() {
-                                  _dataProc[2] = true;
-                                });
-                              } else {
-                                Fluttertoast.showToast(msg: "Debe Registrar una firma");
-                              }
-                            },
-                            child: Text("Siguiente"),
-                          ),
-                        ],
-                      ),
-                    ),
+                              onPressed: () {
+                                if (firma.toString().trim() != '' && firma != null) {
+                                  setState(() {
+                                    _dataProc[2] = true;
+                                  });
+                                } else {
+                                  Fluttertoast.showToast(msg: "Debe Registrar una firma");
+                                }
+                              },
+                              child: Text("Siguiente"))
+                        ]))
                   ],
                 )
               : SizedBox(),
@@ -923,9 +799,35 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
           ),
         )
       ]),
-      ...item.entries
-          .where((entry) => entry.key.startsWith('contacto'))
-          .map((entry) => Text('${entry.key.toString().toUpperCase()}: ${entry.value.toString().split('[')[0]}', textScaleFactor: 1, style: const TextStyle(fontSize: 13))),
+      ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) {
+        // Dividir el valor del contacto en nombre y número
+        final match = RegExp(r'(.+?)\s+\[(\d+)\]').firstMatch(entry.value.toString());
+        if (match != null) {
+          final nombre = match.group(1); // Captura el nombre
+          final numero = match.group(2); // Captura el número
+          // Buscar el DNI relacionado en las claves 'dni_contacto_ope' o 'dni_contacto_ope2'
+          final dniKey = entry.key.endsWith('1')
+              ? 'dni_contacto_ope'
+              : entry.key.endsWith('2')
+              ? 'dni_contacto_ope2'
+              : null;
+          final dni = dniKey != null && item.containsKey(dniKey)
+              ? item[dniKey].toString()
+              : 'DNI NO DISPONIBLE';
+
+          return Text(
+            '${entry.key.toString().toUpperCase()}: $nombre $dni [$numero]',
+            textScaleFactor: 1,
+            style: const TextStyle(fontSize: 13),
+          );
+        }
+        // Si el formato no coincide, mostrar el valor original
+        return Text(
+          '${entry.key.toString().toUpperCase()}: ${entry.value.toString()}',
+          textScaleFactor: 1,
+          style: const TextStyle(fontSize: 13),
+        );
+      }),
       Text(
         "IMPORTE: ${item['importe']}",
         textScaleFactor: 1,
@@ -933,9 +835,8 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
           fontSize: 13,
         ),
       ),
-      SizedBox(
-        height: 7,
-      )
+      Text("${item['modalidad_servicio']}", textScaleFactor: 1, style: const TextStyle(fontSize: 13)),
+      SizedBox(height: 7)
     ],
   );
 }
