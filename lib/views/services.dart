@@ -44,6 +44,13 @@ class _ServicesState extends State<Services> {
   late final TextEditingController _controllerSerial = TextEditingController();
   late final TextEditingController _controllerSerieB = TextEditingController();
 
+  late final TextEditingController _controllerDNIval = TextEditingController();
+  late final TextEditingController _controllerNombreVal = TextEditingController();
+  late final TextEditingController _controllerObservVal = TextEditingController();
+  bool _validate = true;
+  bool _validated = false;
+  String _msg = '';
+
   @override
   void initState() {
     obtenerDatos();
@@ -108,6 +115,7 @@ class _ServicesState extends State<Services> {
               if (index == 1 || widget.item[anterior] != null) {
                 if (widget.item[key] != null) {
                   Fluttertoast.showToast(msg: "Dato Ya Registrado");
+                  Navigator.of(context).pop();
                 } else {
                   if (index != 3) {
                     FormData formData = FormData.fromMap({
@@ -116,9 +124,13 @@ class _ServicesState extends State<Services> {
                       "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
                       "pe_serial_envase": "",
                       "pe_seriales_billetes": "",
-                      "pe_ruta_firma": ""
+                      "pe_ruta_firma": "",
+                      "pe_validacion_contacto": "",
+                      "pe_dni_contacto": "",
+                      "pe_nombre_contacto": "",
+                      "pe_observacion_contacto": ""
                     });
-                    var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
                       Fluttertoast.showToast(msg: response.data['message']);
                       if (index != 4) {
@@ -134,6 +146,7 @@ class _ServicesState extends State<Services> {
                 }
               } else {
                 Fluttertoast.showToast(msg: "Seleccione el paso correctamente ");
+                Navigator.of(context).pop();
               }
             }
           },
@@ -300,62 +313,124 @@ class _ServicesState extends State<Services> {
                   children: [
                     const Divider(),
                     const SizedBox(height: 10),
-                    const Center(child: Text("FIRMA DEL CONTACTO", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-                    const SizedBox(height: 5),
-                    Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(26)),
-                        child: Column(children: [
-                          Padding(padding: const EdgeInsets.all(1.0), child: Signature(controller: sigFirma, height: 220, backgroundColor: Colors.grey.shade100)),
-                          Container(
-                              child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, mainAxisSize: MainAxisSize.max, children: [
-                            IconButton(
-                                icon: Icon(Icons.clear, color: Colors.red),
-                                onPressed: () {
-                                  sigFirma.clear();
-                                  firma = null;
-                                }),
-                            IconButton(
-                                icon: Icon(Icons.undo, color: Colors.amber),
-                                onPressed: () {
-                                  sigFirma.undo();
-                                }),
-                            IconButton(
-                                icon: Icon(Icons.redo, color: Colors.amber),
-                                onPressed: () {
-                                  sigFirma.redo();
-                                }),
-                            IconButton(
-                                onPressed: () async {
-                                  if (sigFirma.isEmpty) {
-                                    Fluttertoast.showToast(msg: "No Existe Firma para Registrar");
-                                    return;
-                                  }
-                                  Uint8List recorder = await sigFirma.toPngBytes() ?? Uint8List(0);
-                                  final tempDir = await getTemporaryDirectory();
-                                  final filePath = '${tempDir.path}/firma_${DateTime.now().toString().split('.')[0].replaceAll('-', '').replaceAll(':', '').replaceAll(' ', '')}.jpg';
-                                  var image = ima.decodeImage(Uint8List.fromList(recorder));
-                                  File(filePath).writeAsBytesSync(ima.encodePng(image!));
-                                  setState(() {
-                                    firma = filePath;
-                                  });
-                                  Fluttertoast.showToast(msg: "Firma Capturada");
-                                },
-                                icon: Icon(Icons.save_as_outlined, color: Colors.blue))
-                          ])),
-                          SizedBox(height: 5),
-                          ElevatedButton(
-                              onPressed: () {
-                                if (firma.toString().trim() != '' && firma != null) {
-                                  setState(() {
-                                    _dataProc[2] = true;
-                                  });
-                                } else {
-                                  Fluttertoast.showToast(msg: "Debe Registrar una firma");
-                                }
-                              },
-                              child: Text("Siguiente"))
-                        ]))
+                    _validate == true
+                        ? Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                        controller: _controllerDNIval, enabled: !_validated, decoration: const InputDecoration(labelText: 'DNI', border: OutlineInputBorder()), textInputAction: TextInputAction.next),
+                                  ),
+                                  SizedBox(width: 10),
+                                  ElevatedButton(
+                                      onPressed: () async {
+                                        var response = await dio.request(
+                                            '$link/api_mobile/apk_tripulacion/validar_contacto_punto/?pe_key_punto_asociado=${widget.item['key_punto_asociado']}&pe_dni_contacto=${_controllerDNIval.text}',
+                                            options: Options(method: 'GET'));
+                                        print(response.data['resultSet'][0]);
+                                        setState(() {
+                                          _validated = response.data['resultSet'][0]['validator'];
+                                          _msg = response.data['resultSet'][0]['message'];
+                                          if (_validated) {
+                                            _controllerNombreVal.text = response.data['resultSet'][0]['contacto'];
+                                          }
+                                        });
+                                        Fluttertoast.showToast(msg: _msg);
+                                      },
+                                      style: ButtonStyle(
+                                          backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                                      child: Text("Validar"))
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              TextFormField(
+                                  controller: _controllerNombreVal, enabled: !_validated, decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()), textInputAction: TextInputAction.next),
+                              const SizedBox(height: 10),
+                              TextFormField(controller: _controllerObservVal, decoration: const InputDecoration(labelText: 'Observacion', border: OutlineInputBorder()), textInputAction: TextInputAction.next),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ElevatedButton(
+                                      onPressed: () async {
+                                        setState(() {
+                                          _validate = false;
+                                        });
+                                      },
+                                      style: ButtonStyle(
+                                          backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                                      child: Text("Siguiente")),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              const SizedBox(height: 10),
+                              const Center(child: Text("FIRMA DEL CONTACTO", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+                              const SizedBox(height: 5),
+                              Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(26)),
+                                  child: Column(children: [
+                                    Padding(padding: const EdgeInsets.all(1.0), child: Signature(controller: sigFirma, height: 220, backgroundColor: Colors.grey.shade100)),
+                                    Container(
+                                        child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, mainAxisSize: MainAxisSize.max, children: [
+                                      IconButton(
+                                          icon: Icon(Icons.clear, color: Colors.red),
+                                          onPressed: () {
+                                            sigFirma.clear();
+                                            firma = null;
+                                          }),
+                                      IconButton(
+                                          icon: Icon(Icons.undo, color: Colors.amber),
+                                          onPressed: () {
+                                            sigFirma.undo();
+                                          }),
+                                      IconButton(
+                                          icon: Icon(Icons.redo, color: Colors.amber),
+                                          onPressed: () {
+                                            sigFirma.redo();
+                                          }),
+                                      IconButton(
+                                          onPressed: () async {
+                                            if (sigFirma.isEmpty) {
+                                              Fluttertoast.showToast(msg: "No Existe Firma para Registrar");
+                                              return;
+                                            }
+                                            Uint8List recorder = await sigFirma.toPngBytes() ?? Uint8List(0);
+                                            final tempDir = await getTemporaryDirectory();
+                                            final filePath = '${tempDir.path}/firma_${DateTime.now().toString().split('.')[0].replaceAll('-', '').replaceAll(':', '').replaceAll(' ', '')}.jpg';
+                                            var image = ima.decodeImage(Uint8List.fromList(recorder));
+                                            File(filePath).writeAsBytesSync(ima.encodePng(image!));
+                                            setState(() {
+                                              firma = filePath;
+                                            });
+                                            Fluttertoast.showToast(msg: "Firma Capturada");
+                                          },
+                                          icon: Icon(Icons.save_as_outlined, color: Colors.blue))
+                                    ])),
+                                    SizedBox(height: 5),
+                                    ElevatedButton(
+                                        onPressed: () {
+                                          if (firma.toString().trim() != '' && firma != null) {
+                                            setState(() {
+                                              _dataProc[2] = true;
+                                            });
+                                          } else {
+                                            Fluttertoast.showToast(msg: "Debe Registrar una firma");
+                                          }
+                                        },
+                                        style: ButtonStyle(
+                                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                                        child: Text("Siguiente"))
+                                  ]))
+                            ],
+                          ),
                   ],
                 )
               : SizedBox(),
@@ -425,10 +500,13 @@ class _ServicesState extends State<Services> {
                                 "pe_serial_envase": serial,
                                 "pe_seriales_billetes": billetesFiles,
                                 "pe_ruta_firma": nombrefirma,
-                                "file": firma_
+                                "file": firma_,
+                                "pe_validacion_contacto": _validated ? 1 : 0,
+                                "pe_dni_contacto": _controllerDNIval.text,
+                                "pe_nombre_contacto": _controllerNombreVal.text,
+                                "pe_observacion_contacto": _controllerObservVal.text
                               });
-                              print(serial);
-                              var response = await dio.request('$link/api_mobile/apk_tripulación/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                              var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
                               if (response.statusCode == 200) {
                                 print(response.data);
                                 Fluttertoast.showToast(msg: response.data['message']);
@@ -440,6 +518,9 @@ class _ServicesState extends State<Services> {
                               Fluttertoast.showToast(msg: "Debe Registrar una firma");
                             }
                           },
+                          style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
                           child: Text(
                             "CONFIRMAR",
                             textScaleFactor: 1,
@@ -630,16 +711,6 @@ class _ServicesState extends State<Services> {
                                 Expanded(child: _buildButton('Salida\nPunto', 'fecha_hora_salida', 4)),
                               ],
                             ),
-                            /*Wrap(
-                              spacing: 1, // Espacio horizontal entre los botones
-                              runSpacing: 2, // Espacio vertical entre las líneas de botones
-                              children: [
-                                _buildButton('Llegada\nal punto', 'fecha_hora_llegada', 1),
-                                _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2),
-                                _buildButton('Fin de\nServicio', 'fecha_hora_fin_servicio', 3),
-                                _buildButton('Salida de\nPunto', 'fecha_hora_salida', 4),
-                              ],
-                            ),*/
                             const SizedBox(height: 20),
                             _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
                           ],
@@ -809,11 +880,9 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
           final dniKey = entry.key.endsWith('1')
               ? 'dni_contacto_ope'
               : entry.key.endsWith('2')
-              ? 'dni_contacto_ope2'
-              : null;
-          final dni = dniKey != null && item.containsKey(dniKey)
-              ? item[dniKey].toString()
-              : 'DNI NO DISPONIBLE';
+                  ? 'dni_contacto_ope2'
+                  : null;
+          final dni = dniKey != null && item.containsKey(dniKey) ? item[dniKey].toString() : 'DNI NO DISPONIBLE';
 
           return Text(
             '${entry.key.toString().toUpperCase()}: $nombre $dni [$numero]',
