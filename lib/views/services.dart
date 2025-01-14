@@ -40,6 +40,7 @@ class _ServicesState extends State<Services> {
   int estado_detalle = 0;
   List arrbilletes = [];
   var firma;
+  var foto;
   var serial = '';
   late final TextEditingController _controllerSerial = TextEditingController();
   late final TextEditingController _controllerSerieB = TextEditingController();
@@ -68,7 +69,7 @@ class _ServicesState extends State<Services> {
   }
 
   obtenerDatos() async {
-    var response = await dio.request('$link/api_mobile/apk_tripulación/siguiente_cv/', options: Options(method: 'GET'));
+    var response = await dio.request('$link/api_mobile/apk_tripulacion/siguiente_cv/', options: Options(method: 'GET'));
     comprobante = (response.data['resultSet'][0]) ?? {};
     _controllerComprobante.text = (response.data['resultSet'][0]['correlativo']) ?? {};
 
@@ -76,7 +77,7 @@ class _ServicesState extends State<Services> {
     motivos = response2.data['resultSet'];
   }
 
-  List<bool> _dataProc = [false, false, false, false];
+  List<bool> _dataProc = [false, false, false, false, false];
 
   Widget _buildButton(String title, String key, int index) {
     return Column(children: [
@@ -294,7 +295,7 @@ class _ServicesState extends State<Services> {
                             Fluttertoast.showToast(msg: "Debe Ingresar Serial");
                             return;
                           }
-                          var response = await dio.request('$link/api_mobile/apk_tripulación/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}', options: Options(method: 'GET'));
+                          var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}', options: Options(method: 'GET'));
                           if (response.data['resultSet'][0]['validator']) {
                             setState(() {
                               _dataProc[1] = true;
@@ -419,6 +420,7 @@ class _ServicesState extends State<Services> {
                                           if (firma.toString().trim() != '' && firma != null) {
                                             setState(() {
                                               _dataProc[2] = true;
+                                              foto = null;
                                             });
                                           } else {
                                             Fluttertoast.showToast(msg: "Debe Registrar una firma");
@@ -445,6 +447,64 @@ class _ServicesState extends State<Services> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 10),
+                          const Center(child: Text("FOTO", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+                          const SizedBox(height: 5),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Center(
+                      child: ElevatedButton(
+                          style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                          onPressed: _tomarFoto,
+                          child: Text('Tomar Foto', textAlign: TextAlign.center, textScaleFactor: 1)),
+                    ),
+                    SizedBox(height: 12),
+                    _fileFoto != null
+                        ? Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Center(
+                                child: Image.file(
+                              _fileFoto!,
+                              height: 250,
+                            )))
+                        : Container(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                            onPressed: () {
+                              if (_fileFoto.toString().trim() != '' && _fileFoto != null) {
+                                setState(() {
+                                  _dataProc[3] = true;
+                                });
+                              } else {
+                                Fluttertoast.showToast(msg: "Debe Registrar una Foto");
+                              }
+                            },
+                            style: ButtonStyle(
+                                backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                            child: Text("Siguiente"))
+                      ],
+                    ),
+                  ],
+                )
+              : SizedBox(),
+          _dataProc[3] && !_dataProc[4]
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Divider(),
+                    const SizedBox(height: 7),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(textScaleFactor: 1, "CS CANJE:  ${widget.item['comprobante_servicio']}"),
                           Text(textScaleFactor: 1, "IMPORTE:  ${widget.item['importe']}"),
                           if (arrbilletes.length > 0) ...[
@@ -454,18 +514,32 @@ class _ServicesState extends State<Services> {
                           serial.length != 0 ? Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}") : SizedBox(),
                           Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.item['contacto1'].toString().split('[')[0]}"),
                           const SizedBox(height: 15),
-                          Center(
-                            child: firma != null
-                                ? Image.file(
-                                    File(firma!),
-                                    width: 150,
-                                    height: 100,
-                                    fit: BoxFit.contain,
-                                  )
-                                : Text(
-                                    "Dibujar Firma",
-                                    textScaleFactor: 1,
-                                  ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _fileFoto != null
+                                  ? Image.file(
+                                      _fileFoto!,
+                                      width: 200,
+                                      height: 150,
+                                      fit: BoxFit.contain,
+                                    )
+                                  : Text(
+                                      "Sin Foto",
+                                      textScaleFactor: 1,
+                                    ),
+                              firma != null
+                                  ? Image.file(
+                                      File(firma!),
+                                      width: 200,
+                                      height: 150,
+                                      fit: BoxFit.contain,
+                                    )
+                                  : Text(
+                                      "Dibujar Firma",
+                                      textScaleFactor: 1,
+                                    ),
+                            ],
                           ),
                         ],
                       ),
@@ -476,46 +550,50 @@ class _ServicesState extends State<Services> {
                       children: [
                         ElevatedButton(
                           onPressed: () async {
-                            if (firma.toString().trim() != '' && firma != null) {
-                              List<MultipartFile> billetesFiles = [];
-                              for (var billete in arrbilletes) {
-                                billetesFiles.add(await MultipartFile.fromFile(
-                                  billete['image'], // Ruta del archivo de imagen
-                                  filename: billete['Serie'], // Nombre del archivo (el serial del billete)
-                                ));
-                              }
+                            List<MultipartFile> billetesFiles = [];
+                            for (var billete in arrbilletes) {
+                              billetesFiles.add(await MultipartFile.fromFile(
+                                billete['image'], // Ruta del archivo de imagen
+                                filename: billete['Serie'], // Nombre del archivo (el serial del billete)
+                              ));
+                            }
 
-                              List<MultipartFile> firma_ = [];
-                              String nombrefirma = '';
-                              if (firma != null) {
-                                nombrefirma = firma.toString().split('cache/').last; // Extraer el nombre del archivo
-                                MultipartFile firmaz = await MultipartFile.fromFile(firma, filename: nombrefirma);
-                                firma_.add(firmaz);
-                              }
-
-                              FormData formData = FormData.fromMap({
-                                "pe_etapa_atencion": 3,
-                                "pe_user_id": widget.user['user_id'],
-                                "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                                "pe_serial_envase": serial,
-                                "pe_seriales_billetes": billetesFiles,
-                                "pe_ruta_firma": nombrefirma,
-                                "file": firma_,
-                                "pe_validacion_contacto": _validated ? 1 : 0,
-                                "pe_dni_contacto": _controllerDNIval.text,
-                                "pe_nombre_contacto": _controllerNombreVal.text,
-                                "pe_observacion_contacto": _controllerObservVal.text
-                              });
-                              var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
-                              if (response.statusCode == 200) {
-                                print(response.data);
-                                Fluttertoast.showToast(msg: response.data['message']);
-                                await UpdateList(widget.item['id_pedido']);
-                              } else {
-                                print(response.statusMessage);
-                              }
+                            List<MultipartFile> firma_ = [];
+                            String nombrefirma = '';
+                            if (firma != null) {
+                              nombrefirma = firma.toString().split('cache/').last; // Extraer el nombre del archivo
+                              MultipartFile firmaz = await MultipartFile.fromFile(firma, filename: nombrefirma);
+                              firma_.add(firmaz);
+                            }
+                            List<MultipartFile> foto_ = [];
+                            String nombrefoto = '';
+                            if (_fileFoto != null) {
+                              nombrefoto = _fileFoto!.path.toString().split('cache/').last;
+                              MultipartFile fotox = await MultipartFile.fromFile(_fileFoto!.path, filename: nombrefoto);
+                              foto_.add(fotox);
+                            }
+                            FormData formData = FormData.fromMap({
+                              "pe_etapa_atencion": 3,
+                              "pe_user_id": widget.user['user_id'],
+                              "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                              "pe_serial_envase": serial,
+                              "pe_seriales_billetes": billetesFiles,
+                              "pe_ruta_firma": nombrefirma,
+                              "file": firma_,
+                              "pe_ruta_foto": nombrefoto,
+                              "pe_foto_contacto": foto_,
+                              "pe_validacion_contacto": _validated ? 1 : 0,
+                              "pe_dni_contacto": _controllerDNIval.text,
+                              "pe_nombre_contacto": _controllerNombreVal.text,
+                              "pe_observacion_contacto": _controllerObservVal.text
+                            });
+                            var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                            print(response);
+                            if (response.statusCode == 200) {
+                              Fluttertoast.showToast(msg: response.data['message']);
+                              await UpdateList(widget.item['id_pedido']);
                             } else {
-                              Fluttertoast.showToast(msg: "Debe Registrar una firma");
+                              print(response.statusMessage);
                             }
                           },
                           style: ButtonStyle(
@@ -537,6 +615,7 @@ class _ServicesState extends State<Services> {
   }
 
   File? _fileImage;
+  File? _fileFoto;
   final ImagePicker _picker = ImagePicker();
 
   void _addBillete() {
@@ -562,6 +641,15 @@ class _ServicesState extends State<Services> {
     if (pickedFile != null) {
       setState(() {
         _fileImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  void _tomarFoto() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      setState(() {
+        _fileFoto = File(pickedFile.path);
       });
     }
   }
@@ -600,7 +688,7 @@ class _ServicesState extends State<Services> {
             );
           },
         );
-        var response = await dio.request('$link/api_mobile/apk_tripulación/generar_falsa_parada/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+        var response = await dio.request('$link/api_mobile/apk_tripulacion/generar_falsa_parada/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
         if (response.statusCode == 200) {
           Navigator.pop(context);
           Fluttertoast.showToast(msg: response.data['message']);
@@ -788,7 +876,7 @@ class _ServicesState extends State<Services> {
   Future<void> UpdateList(int idPedido) async {
     var fecha = widget.fecha;
     var rpa = await dio.request(
-      '$link/api_mobile/apk_tripulación/listar_pedidos/?pe_user_id=${widget.user['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=22',
+      '$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.user['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=22',
       options: Options(
         method: 'GET',
       ),

@@ -48,7 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> obtenerDatosServicio() async {
     var fecha = fechaH;
-    var response = await dio.request('$link/api_mobile/apk_tripulación/contar_tipo_servicio/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}', options: Options(method: 'GET'));
+    var response = await dio.request('$link/api_mobile/apk_tripulacion/contar_tipo_servicio/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}', options: Options(method: 'GET'));
     if (response.statusCode == 200) {
       resultado = response.data;
     }
@@ -56,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> ValidarSerial(String serial) async {
     var fecha = fechaH;
-    var response = await dio.request('$link/api_mobile/apk_tripulación/validar_correlativo_ruta/?pe_user_id=${widget.trabajador['user_id']}&pe_correlativo=$serial&pe_fecha_atencion=${fecha.split(' ')[0]}',
+    var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_correlativo_ruta/?pe_user_id=${widget.trabajador['user_id']}&pe_correlativo=$serial&pe_fecha_atencion=${fecha.split(' ')[0]}',
         options: Options(method: 'GET'));
     if (response.statusCode == 200) {
       respValidar = response.data;
@@ -196,7 +196,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                           ? null
                                           : () async {
                                               var response = await dio.request(
-                                                  '$link/api_mobile/apk_tripulación/resetear_validacion_envases/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}',
+                                                  '$link/api_mobile/apk_tripulacion/resetear_validacion_envases/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}',
                                                   options: Options(method: 'GET'));
                                               await obtenerDatosServicio();
                                               setState(() {
@@ -262,7 +262,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             "pe_taquilla_despacho": androidId,
                                             "pe_key_hoja_ruta": resultado['resultSet'][index_]['key_hoja_ruta']
                                           });
-                                          var response = await dio.request('$link/api_mobile/apk_tripulación/despachar_movil/', options: Options(method: 'POST', headers: headers), data: data);
+                                          var response = await dio.request('$link/api_mobile/apk_tripulacion/despachar_movil/', options: Options(method: 'POST', headers: headers), data: data);
                                           Navigator.of(context).pop();
                                           setState(() {
                                             if (response.statusCode == 200) {

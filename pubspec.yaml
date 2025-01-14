@@ -2,7 +2,7 @@ name: microcash_tripulacion
 description: "Microcash Tripulación."
 
 publish_to: 'Microcash'
-version: 2.0.9
+version: 2.1.0
 
 environment:
   sdk: '>=3.4.3 <4.0.0'
