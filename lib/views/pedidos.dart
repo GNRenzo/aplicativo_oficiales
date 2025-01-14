@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:microcash_tripulacion/views/login.dart';
 import 'package:intl/intl.dart';
 import 'package:microcash_tripulacion/views/services.dart';
@@ -45,9 +47,9 @@ class _PedidoState extends State<Pedidos> {
 
   Future<void> _UpdateList() async {
     var fecha = fechaH;
-    var rpa = await dio.request('$link/api_mobile/apk_tripulación/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=22',
+    var rpa = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=22',
         options: Options(method: 'GET'));
-    var ra = await dio.request('$link/api_mobile/apk_tripulación/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=19',
+    var ra = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=19',
         options: Options(method: 'GET'));
     setState(() {
       porAtender = rpa.data['resultSet'];
@@ -64,60 +66,85 @@ class _PedidoState extends State<Pedidos> {
   }
 
   void _setFiltro(int estado) {
+    _controllerKm.text = '';
     setState(() {
       _filtroEstado = estado;
     });
   }
 
+  late final TextEditingController _controllerKm = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     _UpdateList();
+    int idHoja = 0;
+    String km = '';
+
+    if (porAtender.isNotEmpty && porAtender[0]['id_hoja_ruta'] != null) {
+      idHoja = porAtender[0]['id_hoja_ruta'];
+      km = porAtender[0]['kilometraje_llegada'] != null ? (porAtender[0]['kilometraje_llegada']) : '';
+    } else if (atendido.isNotEmpty && atendido[0]['id_hoja_ruta'] != null) {
+      idHoja = atendido[0]['id_hoja_ruta'];
+      km = atendido[0]['kilometraje_llegada'] != null ? (atendido[0]['kilometraje_llegada']) : '';
+    }
+    if (km != '') {
+      _controllerKm.text = km;
+    }
+
     return Scaffold(
-        appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.onPrimaryFixed,
-            title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('MICROCASH', textScaleFactor: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
-              Text(DateFormat('dd MMM yyyy hh:mma', 'es_ES').format(_currentDateTime), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13))
-            ]),
-            leading: IconButton(
-                icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.tertiaryContainer),
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage()));
-                }),
-            centerTitle: true),
-        body: RefreshIndicator(
-            onRefresh: () async {
-              await _UpdateList();
-            },
-            child: Container(
-                height: MediaQuery.sizeOf(context).height,
-                padding: const EdgeInsets.all(16),
-                color: Theme.of(context).colorScheme.onPrimary,
-                child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-                  Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Row(children: [
-                        _filteredParadas.length > 0 ? Text('RUTA:     ${_filteredParadas[0]['id_hoja_ruta']}', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)) : SizedBox(),
-                      ])),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    ElevatedButton.icon(
-                        onPressed: () => _setFiltro(1),
-                        style: ButtonStyle(
-                            backgroundColor:
-                                _filtroEstado == 2 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                        label: const Text('Por Atender', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                        onPressed: () => _setFiltro(2),
-                        style: ButtonStyle(
-                            backgroundColor:
-                                _filtroEstado == 1 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                        label: const Text('Atendido', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)))
-                  ]),
-                  const SizedBox(height: 16),
-                  Expanded(
+      appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.onPrimaryFixed,
+          title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('MICROCASH', textScaleFactor: 1, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+            Text(DateFormat('dd MMM yyyy hh:mma', 'es_ES').format(_currentDateTime), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13))
+          ]),
+          leading: IconButton(
+              icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.tertiaryContainer),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage()));
+              }),
+          centerTitle: true),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _UpdateList();
+        },
+        child: Container(
+          height: MediaQuery.sizeOf(context).height,
+          padding: const EdgeInsets.all(16),
+          color: Theme.of(context).colorScheme.onPrimary,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Row(children: [
+                    _filteredParadas.length > 0 ? Text('RUTA:     ${_filteredParadas[0]['id_hoja_ruta']}', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)) : SizedBox(),
+                  ])),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                ElevatedButton.icon(
+                    onPressed: () => _setFiltro(1),
+                    style: ButtonStyle(
+                        backgroundColor: _filtroEstado != 1 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                        foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                    label: const Text('Por Atender', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                    onPressed: () => _setFiltro(2),
+                    style: ButtonStyle(
+                        backgroundColor: _filtroEstado != 2 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                        foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                    label: const Text('Atendido', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                    onPressed: () => _setFiltro(3),
+                    style: ButtonStyle(
+                        backgroundColor: _filtroEstado != 3 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                        foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                    label: const Text('Llegada Base', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)))
+              ]),
+              const SizedBox(height: 16),
+              _filtroEstado != 3
+                  ? Expanded(
                       child: ListView.builder(
                           itemCount: _filteredParadas.length,
                           itemBuilder: (context, index) {
@@ -192,6 +219,58 @@ class _PedidoState extends State<Pedidos> {
                                           : SizedBox()
                                     ])));
                           }))
-                ]))));
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 7),
+                        const Center(child: Text("Km de Llegada", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+                        SizedBox(height: 12),
+                        TextFormField(controller: _controllerKm, enabled: km.length == 0, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Km de Llegada Base', border: OutlineInputBorder())),
+                        SizedBox(height: 12),
+                        km == ''
+                            ? ElevatedButton(
+                                style: ButtonStyle(
+                                  backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                                  foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed),
+                                ),
+                                onPressed: () async {
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (BuildContext context) {
+                                      return const AlertDialog(
+                                        content: Row(
+                                          children: [CircularProgressIndicator(), SizedBox(width: 20), Text("Cargando...")],
+                                        ),
+                                      );
+                                    },
+                                  );
+                                  var headers = {'Content-Type': 'application/json'};
+                                  var data = json.encode({
+                                    "pe_id_hoja_ruta": idHoja,
+                                    "pe_kilometraje_llegada": _controllerKm.text,
+                                  });
+                                  print(data);
+                                  var response = await dio.request('$link/api_mobile/apk_tripulacion/preliquidar_movil/', options: Options(method: 'POST', headers: headers), data: data);
+                                  Navigator.of(context).pop();
+                                  setState(() {
+                                    if (response.statusCode == 200) {
+                                      print(response.data);
+                                      _controllerKm.text = '';
+                                      _filtroEstado = 1;
+                                      Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
+                                    }
+                                  });
+                                },
+                                child: Text('Confirmar', textAlign: TextAlign.center, textScaleFactor: 1),
+                              )
+                            : SizedBox(),
+                      ],
+                    )
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
