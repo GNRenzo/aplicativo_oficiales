@@ -151,7 +151,34 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: Column(children: [
                                 !activarKm
                                     ? TextFormField(
-                                        enabled: !activarKm, controller: serialController, decoration: const InputDecoration(labelText: 'Serial', border: OutlineInputBorder()), textInputAction: TextInputAction.next)
+                                        enabled: !activarKm,
+                                        controller: serialController,
+                                        decoration: const InputDecoration(labelText: 'Serial', border: OutlineInputBorder()),
+                                        textInputAction: TextInputAction.next,
+                                        onChanged: (value) async{
+                                          if (value.length == 8) {
+                                            showDialog(
+                                                context: context,
+                                                barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
+                                                builder: (BuildContext context) {
+                                                  return const AlertDialog(
+                                                      content: Row(children: [
+                                                    CircularProgressIndicator(), // Indicador circular de carga
+                                                    SizedBox(width: 20),
+                                                    Text("Cargando...")
+                                                  ]));
+                                                });
+                                            await ValidarSerial(serialController.text);
+                                            await obtenerDatosServicio();
+                                            setState(() {
+                                              serialController.text = '';
+                                            });
+                                            // Cerrar el dialogo después de que la operación termine
+                                            Navigator.of(context).pop();
+                                            Fluttertoast.showToast(msg: respValidar['resultSet'][0]['message']);
+                                          }
+                                        },
+                                      )
                                     : SizedBox(),
                                 Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10),
