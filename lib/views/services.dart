@@ -179,8 +179,7 @@ class _ServicesState extends State<Services> {
       _dataProc[0] = true;
       _dataProc[1] = true;
     }
-    return Container(
-      height: MediaQuery.sizeOf(context).height * 0.55,
+    return SizedBox(
       child: Column(
         children: [
           !_dataProc[0]
@@ -188,13 +187,12 @@ class _ServicesState extends State<Services> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Divider(),
-                    const SizedBox(height: 7),
                     const Center(child: Text("BILLETES SOSPECHOSOS", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
                     SizedBox(height: 10),
                     Row(children: [arrbilletes != null ? Text("CANTIDAD DE BILLETES SOSPECHOSOS  ${arrbilletes.length}", textScaleFactor: 1, style: TextStyle(fontSize: 13)) : SizedBox()]),
-                    SizedBox(height: 12),
+                    SizedBox(height: 10),
                     TextFormField(controller: _controllerSerieB, decoration: InputDecoration(labelText: 'Serial de Billete', border: OutlineInputBorder())),
-                    SizedBox(height: 12),
+                    SizedBox(height: 10),
                     _fileImage != null
                         ? Padding(
                             padding: const EdgeInsets.all(8.0),
@@ -210,13 +208,13 @@ class _ServicesState extends State<Services> {
                               backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
                               foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
                           onPressed: _takePhoto,
-                          child: Text('Foto\nBillete', textAlign: TextAlign.center, textScaleFactor: 1)),
+                          child: Text('Foto', textAlign: TextAlign.center, textScaleFactor: 1)),
                       ElevatedButton(
                           style: ButtonStyle(
                               backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
                               foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
                           onPressed: _addBillete,
-                          child: Text('Agregar\nBillete', textAlign: TextAlign.center, textScaleFactor: 1))
+                          child: Text('Agregar', textAlign: TextAlign.center, textScaleFactor: 1))
                     ]),
                     SizedBox(height: 10),
                     arrbilletes.length > 0
@@ -280,8 +278,22 @@ class _ServicesState extends State<Services> {
                   TextFormField(
                       controller: _controllerSerial,
                       decoration: const InputDecoration(labelText: 'Número de Serial', border: OutlineInputBorder()),
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         serial = value;
+                        if (value.length == 8) {
+                          if (serial.toString().trim() == '' || serial == null) {
+                            Fluttertoast.showToast(msg: "Debe Ingresar Serial");
+                            return;
+                          }
+                          var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}', options: Options(method: 'GET'));
+                          if (response.data['resultSet'][0]['validator']) {
+                            setState(() {
+                              _dataProc[1] = true;
+                            });
+                          } else {
+                            Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
+                          }
+                        }
                       },
                       textInputAction: TextInputAction.next),
                   const SizedBox(height: 40),
@@ -441,35 +453,33 @@ class _ServicesState extends State<Services> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Divider(),
-                    const SizedBox(height: 7),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(height: 10),
-                          const Center(child: Text("FOTO", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-                          const SizedBox(height: 5),
+                          TextButton.icon(
+                              iconAlignment: IconAlignment.end,
+                              icon: Icon(Icons.camera_alt_outlined),
+                              onPressed: _tomarFoto,
+                              label: const Text(
+                                "FOTO",
+                                textScaleFactor: 1,
+                                maxLines: 2,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                              ))
                         ],
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Center(
-                      child: ElevatedButton(
-                          style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                          onPressed: _tomarFoto,
-                          child: Text('Tomar Foto', textAlign: TextAlign.center, textScaleFactor: 1)),
-                    ),
-                    SizedBox(height: 12),
+                    SizedBox(height: 10),
                     _fileFoto != null
                         ? Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Center(
                                 child: Image.file(
                               _fileFoto!,
-                              height: 250,
+                              height: 200,
                             )))
                         : Container(),
                     Row(
@@ -520,7 +530,7 @@ class _ServicesState extends State<Services> {
                               _fileFoto != null
                                   ? Image.file(
                                       _fileFoto!,
-                                      width: 200,
+                                      width: 80,
                                       height: 150,
                                       fit: BoxFit.contain,
                                     )
@@ -531,7 +541,7 @@ class _ServicesState extends State<Services> {
                               firma != null
                                   ? Image.file(
                                       File(firma!),
-                                      width: 200,
+                                      width: 80,
                                       height: 150,
                                       fit: BoxFit.contain,
                                     )

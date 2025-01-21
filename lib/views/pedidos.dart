@@ -120,28 +120,34 @@ class _PedidoState extends State<Pedidos> {
                   child: Row(children: [
                     _filteredParadas.length > 0 ? Text('RUTA:     ${_filteredParadas[0]['id_hoja_ruta']}', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)) : SizedBox(),
                   ])),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                ElevatedButton.icon(
-                    onPressed: () => _setFiltro(1),
-                    style: ButtonStyle(
-                        backgroundColor: _filtroEstado != 1 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                        foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                    label: const Text('Por Atender', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                    onPressed: () => _setFiltro(2),
-                    style: ButtonStyle(
-                        backgroundColor: _filtroEstado != 2 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                        foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                    label: const Text('Atendido', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                    onPressed: () => _setFiltro(3),
-                    style: ButtonStyle(
-                        backgroundColor: _filtroEstado != 3 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                        foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                    label: const Text('Llegada Base', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)))
-              ]),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal, // Habilitar scroll horizontal
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  ElevatedButton.icon(
+                      onPressed: () => _setFiltro(1),
+                      style: ButtonStyle(
+                          backgroundColor: _filtroEstado != 1 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                          foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                      label: const Text('Por Atender', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                      onPressed: () => _setFiltro(2),
+                      style: ButtonStyle(
+                          backgroundColor: _filtroEstado != 2 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                          foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                      label: const Text('Atendido', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold))),
+                  const SizedBox(width: 8),
+                  porAtender.length == 0
+                      ? ElevatedButton.icon(
+                          onPressed: () => _setFiltro(3),
+                          style: ButtonStyle(
+                              backgroundColor:
+                                  _filtroEstado != 3 ? WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onTertiary) : WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                              foregroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                          label: const Text('Llegada Base', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)))
+                      : SizedBox()
+                ]),
+              ),
               const SizedBox(height: 16),
               _filtroEstado != 3
                   ? Expanded(
