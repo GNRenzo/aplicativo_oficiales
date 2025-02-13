@@ -560,6 +560,23 @@ class _ServicesState extends State<Services> {
                       children: [
                         ElevatedButton(
                           onPressed: () async {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (BuildContext context) {
+                                return const AlertDialog(
+                                  content: Row(
+                                    children: [
+                                      CircularProgressIndicator(),
+                                      SizedBox(width: 20),
+                                      Text("Cargando..."),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                            // await Future.delayed(Duration(seconds: 2));
+
                             List<MultipartFile> billetesFiles = [];
                             for (var billete in arrbilletes) {
                               billetesFiles.add(await MultipartFile.fromFile(
@@ -598,12 +615,13 @@ class _ServicesState extends State<Services> {
                               "pe_observacion_contacto": _controllerObservVal.text
                             });
                             var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                            Navigator.of(context).pop();
                             if (response.statusCode == 200) {
-                              print(response.data);
                               Fluttertoast.showToast(msg: response.data['message']);
                               await UpdateList(widget.item['id_pedido']);
                             } else {
                               print(response.statusMessage);
+                              Fluttertoast.showToast(msg: response.statusMessage ?? response.data['message']);
                             }
                           },
                           style: ButtonStyle(
