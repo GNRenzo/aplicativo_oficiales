@@ -184,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                                         textAlign: TextAlign.center,
                                       ),
                                     ),
-                                    Text("2.1.3",
+                                    Text("2.1.4",
                                         style: TextStyle(
                                             color: Theme.of(context)
                                                 .colorScheme
@@ -308,7 +308,7 @@ class _LoginPageState extends State<LoginPage> {
                                   textAlign: TextAlign.center,
                                 ),
                               ),
-                              Text("2.1.3",
+                              Text("2.1.4",
                                   style: TextStyle(
                                       color: Theme.of(context)
                                           .colorScheme
