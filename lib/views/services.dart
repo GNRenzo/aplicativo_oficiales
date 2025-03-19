@@ -166,6 +166,8 @@ class _ServicesState extends State<Services> {
 
   SignatureController sigFirma = SignatureController(penStrokeWidth: 1.5, penColor: Colors.black, exportBackgroundColor: Colors.white, exportPenColor: Colors.black);
 
+  bool respUser = false;
+
   Widget FormularioFinServicio() {
     String seriales = '';
     if (arrbilletes != null && arrbilletes is List) {
@@ -193,7 +195,7 @@ class _ServicesState extends State<Services> {
                               var response = await dio.request(
                                   '$link/api_mobile/apk_tripulacion/validar_contacto_punto/?pe_key_punto_asociado=${widget.item['key_punto_asociado']}&pe_dni_contacto=${_controllerDNIval.text}',
                                   options: Options(method: 'GET'));
-                              print(response.data['resultSet'][0]);
+                              respUser = response.data['resultSet'][0]['validator'];
                               setState(() {
                                 _validated = response.data['resultSet'][0]['validator'];
                                 _msg = response.data['resultSet'][0]['message'];
@@ -220,7 +222,7 @@ class _ServicesState extends State<Services> {
                         ElevatedButton(
                             onPressed: () async {
                               setState(() {
-                                if (_controllerNombreVal.text != '' && _controllerObservVal.text != '') {
+                                if (_controllerNombreVal.text != '' && (respUser || _controllerObservVal.text.trim().isNotEmpty)) {
                                   _dataProc[0] = true;
                                   switch (widget.item['key_modalidad_servicio_id']) {
                                     case 1:

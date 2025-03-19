@@ -169,17 +169,26 @@ class _PedidoState extends State<Pedidos> {
                                                 ? Colors.green.withOpacity(0.2)
                                                 : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 33
                                                     ? Colors.white70
-                                                    : Colors.yellow.withOpacity(0.2),
+                                                    : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 38
+                                                        ? Colors.orange.withOpacity(0.5)
+                                                        : Colors.yellow.withOpacity(0.2),
                                         borderRadius: BorderRadius.all(Radius.circular(10)),
                                         border: Border.all(color: Colors.black.withOpacity(0.3), width: 1)),
                                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      Center(child: Text("${_filteredParadas[index]['estado_detalle_hoja_ruta']}", style: TextStyle(fontWeight: FontWeight.bold))),
                                       Row(children: [
                                         _filteredParadas[index]['key_estado_detalle_hoja_id'] == 29
                                             ? Row(children: [SizedBox(width: MediaQuery.sizeOf(context).width * 0.05), Icon(Icons.error, color: Colors.red), SizedBox(width: MediaQuery.sizeOf(context).width * 0.05)])
                                             : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 35
                                                 ? Row(
                                                     children: [SizedBox(width: MediaQuery.sizeOf(context).width * 0.05), Icon(Icons.check, color: Colors.green), SizedBox(width: MediaQuery.sizeOf(context).width * 0.05)])
-                                                : SizedBox(),
+                                                : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 38
+                                                    ? Row(children: [
+                                                        SizedBox(width: MediaQuery.sizeOf(context).width * 0.05),
+                                                        Icon(Icons.cancel, color: Colors.orange),
+                                                        SizedBox(width: MediaQuery.sizeOf(context).width * 0.05)
+                                                      ])
+                                                    : SizedBox(),
                                         Flexible(
                                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                           Text("Secuencias:  ${item['secuencia']}",
