@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:nb_utils/nb_utils.dart';
 
 TextTheme createTextTheme(
     BuildContext context, String bodyFontString, String displayFontString) {
@@ -16,4 +17,13 @@ TextTheme createTextTheme(
     labelSmall: bodyTextTheme.labelSmall,
   );
   return textTheme;
+}
+
+
+
+
+Future<Map<String, String>> datosUsuario() async {
+  var prefs = await SharedPreferences.getInstance();
+  return { "user": prefs.getString('user') ?? '',
+          "pass":prefs.getString('pass') ?? ''};
 }

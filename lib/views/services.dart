@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -6,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:microcash_tripulacion/theme/util.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as ima;
@@ -34,10 +36,9 @@ class _ServicesState extends State<Services> {
   var comprobante = {};
   var motivos = [];
   late final TextEditingController _controllerComprobante = TextEditingController();
-  var selectMotivo;
 
-  int estado_plan = 0;
-  int estado_detalle = 0;
+  String estado_plan = '';
+  String estado_detalle = '';
   List arrbilletes = [];
   var firma;
   var foto;
@@ -54,7 +55,6 @@ class _ServicesState extends State<Services> {
 
   @override
   void initState() {
-    obtenerDatos();
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 2), (Timer timer) {
       setState(() {
@@ -68,14 +68,7 @@ class _ServicesState extends State<Services> {
     }
   }
 
-  obtenerDatos() async {
-    var response = await dio.request('$link/api_mobile/apk_tripulacion/siguiente_cv/', options: Options(method: 'GET'));
-    comprobante = (response.data['resultSet'][0]) ?? {};
-    _controllerComprobante.text = (response.data['resultSet'][0]['correlativo']) ?? {};
-
-    var response2 = await dio.request('$link/tablas/motivo/listar/?key_estado_id=1', options: Options(method: 'GET'));
-    motivos = response2.data['resultSet'];
-  }
+  var user = {};
 
   List<bool> _dataProc = [false, false, false, false, false, false];
 
@@ -102,7 +95,6 @@ class _ServicesState extends State<Services> {
                   );
                 },
               );
-              print("$estado_plan  $estado_detalle");
               String anterior = "";
               if (index == 2) {
                 anterior = 'fecha_hora_llegada';
@@ -118,20 +110,54 @@ class _ServicesState extends State<Services> {
                   Fluttertoast.showToast(msg: "Dato Ya Registrado");
                   Navigator.of(context).pop();
                 } else {
-                  if (index != 3) {
+                  user = await datosUsuario();
+                  final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
+                  if (index == 1) {
                     FormData formData = FormData.fromMap({
-                      "pe_etapa_atencion": index,
                       "pe_user_id": widget.user['user_id'],
                       "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                      "pe_serial_envase": "",
-                      "pe_seriales_billetes": "",
-                      "pe_ruta_firma": "",
-                      "pe_validacion_contacto": "",
-                      "pe_dni_contacto": "",
-                      "pe_nombre_contacto": "",
-                      "pe_observacion_contacto": ""
                     });
-                    var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/llegada_punto/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      if (index != 4) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    } else {
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    }
+                    Navigator.of(context).pop();
+                  }
+                  if (index == 2) {
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/inicio_servicio/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      if (index != 4) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    } else {
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    }
+                    Navigator.of(context).pop();
+                  }
+
+                  if (index == 4) {
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/salida_punto/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
                       Fluttertoast.showToast(msg: response.data['message']);
                       if (index != 4) {
@@ -192,9 +218,11 @@ class _ServicesState extends State<Services> {
                         SizedBox(width: 10),
                         ElevatedButton(
                             onPressed: () async {
+                              user = await datosUsuario();
+                              final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
                               var response = await dio.request(
                                   '$link/api_mobile/apk_tripulacion/validar_contacto_punto/?pe_key_punto_asociado=${widget.item['key_punto_asociado']}&pe_dni_contacto=${_controllerDNIval.text}',
-                                  options: Options(method: 'GET'));
+                                  options: Options(headers: {'Authorization': basicAuth}, method: 'GET'));
                               respUser = response.data['resultSet'][0]['validator'];
                               setState(() {
                                 _validated = response.data['resultSet'][0]['validator'];
@@ -250,140 +278,8 @@ class _ServicesState extends State<Services> {
                   ],
                 )
               : SizedBox(),
-          //BILLETES SOSPECHOSOS
-          _dataProc[0] && !_dataProc[1]
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Divider(),
-                    const Center(child: Text("BILLETES SOSPECHOSOS", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-                    SizedBox(height: 10),
-                    Row(children: [arrbilletes != null ? Text("CANTIDAD DE BILLETES SOSPECHOSOS  ${arrbilletes.length}", textScaleFactor: 1, style: TextStyle(fontSize: 13)) : SizedBox()]),
-                    SizedBox(height: 10),
-                    TextFormField(controller: _controllerSerieB, decoration: InputDecoration(labelText: 'Serial de Billete', border: OutlineInputBorder())),
-                    SizedBox(height: 10),
-                    _fileImage != null ? Padding(padding: const EdgeInsets.all(8.0), child: Center(child: Image.file(_fileImage!, height: 120))) : Container(),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                      ElevatedButton(
-                          style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                          onPressed: _takePhoto,
-                          child: Text('Foto', textAlign: TextAlign.center, textScaleFactor: 1)),
-                      ElevatedButton(
-                          style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                          onPressed: _addBillete,
-                          child: Text('Agregar', textAlign: TextAlign.center, textScaleFactor: 1))
-                    ]),
-                    SizedBox(height: 10),
-                    arrbilletes.length > 0
-                        ? Container(
-                            height: int.parse(arrbilletes.length.toString()) * 50,
-                            child: ListView.builder(
-                                physics: BouncingScrollPhysics(),
-                                itemCount: arrbilletes.length,
-                                itemBuilder: (context, index) {
-                                  var billete = arrbilletes[index];
-                                  return ListTile(
-                                      title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('${billete['Serie']}'), Text(billete['image'] != null ? 'Ver' : 'Sin imagen')]),
-                                      onTap: billete['image'] != null ? () => _viewImage(billete['image']) : null);
-                                }))
-                        : SizedBox(),
-                    Container(
-                      width: MediaQuery.sizeOf(context).width,
-                      child: ElevatedButton(
-                        style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                        onPressed: () {
-                          if (arrbilletes.length == 0) {
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(title: Text("¿Estás seguro?"), content: Text("No hay billetes en la lista. ¿Deseas continuar?"), actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text("Cancelar")),
-                                    TextButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            _dataProc[1] = true;
-                                          });
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text("Continuar"))
-                                  ]);
-                                });
-                          } else {
-                            setState(() {
-                              _dataProc[1] = true;
-                            });
-                          }
-                        },
-                        child: Text("Siguiente"),
-                      ),
-                    )
-                  ],
-                )
-              : SizedBox(),
-          //REGISTRE SERIAL DE ENVASE
-          _dataProc[1] && !_dataProc[2]
-              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Divider(),
-                  const SizedBox(height: 10),
-                  const Center(child: Text("REGISTRE SERIAL DE ENVASE\nMICROCASH", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-                  const SizedBox(height: 40),
-                  TextFormField(
-                      controller: _controllerSerial,
-                      decoration: const InputDecoration(labelText: 'Número de Serial', border: OutlineInputBorder()),
-                      onChanged: (value) async {
-                        serial = value;
-                        if (value.length == 8) {
-                          if (serial.toString().trim() == '' || serial == null) {
-                            Fluttertoast.showToast(msg: "Debe Ingresar Serial");
-                            return;
-                          }
-                          var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}', options: Options(method: 'GET'));
-                          if (response.data['resultSet'][0]['validator']) {
-                            setState(() {
-                              _dataProc[2] = true;
-                            });
-                          } else {
-                            Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
-                          }
-                        }
-                      },
-                      textInputAction: TextInputAction.next),
-                  const SizedBox(height: 40),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                    ElevatedButton(
-                        style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                        onPressed: () async {
-                          if (serial.toString().trim() == '' || serial == null) {
-                            Fluttertoast.showToast(msg: "Debe Ingresar Serial");
-                            return;
-                          }
-                          var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}', options: Options(method: 'GET'));
-                          if (response.data['resultSet'][0]['validator']) {
-                            setState(() {
-                              _dataProc[2] = true;
-                            });
-                          } else {
-                            Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
-                          }
-                        },
-                        child: Text("Siguiente"))
-                  ])
-                ])
-              : SizedBox(),
           // FIRMA CONTACTO
-          _dataProc[2] && !_dataProc[3]
+          _dataProc[0] && !_dataProc[1]
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -440,7 +336,7 @@ class _ServicesState extends State<Services> {
                                   onPressed: () {
                                     if (firma.toString().trim() != '' && firma != null) {
                                       setState(() {
-                                        _dataProc[3] = true;
+                                        _dataProc[1] = true;
                                         foto = null;
                                       });
                                     } else {
@@ -458,7 +354,7 @@ class _ServicesState extends State<Services> {
                 )
               : SizedBox(),
           // FOTO
-          _dataProc[3] && !_dataProc[4]
+          _dataProc[1] && !_dataProc[2]
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -499,7 +395,7 @@ class _ServicesState extends State<Services> {
                             onPressed: () {
                               if (_fileFoto.toString().trim() != '' && _fileFoto != null) {
                                 setState(() {
-                                  _dataProc[4] = true;
+                                  _dataProc[2] = true;
                                 });
                               } else {
                                 Fluttertoast.showToast(msg: "Debe Registrar una Foto");
@@ -515,7 +411,7 @@ class _ServicesState extends State<Services> {
                 )
               : SizedBox(),
           // CONFIRMAR
-          _dataProc[4] && !_dataProc[5]
+          _dataProc[2] && !_dataProc[3]
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -526,13 +422,7 @@ class _ServicesState extends State<Services> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(textScaleFactor: 1, "CS CANJE:  ${widget.item['comprobante_servicio']}"),
                           Text(textScaleFactor: 1, "IMPORTE:  ${widget.item['importe']}"),
-                          if (arrbilletes.length > 0) ...[
-                            Text(textScaleFactor: 1, "BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
-                            arrbilletes.toList().length != 0 ? Text(textScaleFactor: 1, "SERIALES: $seriales") : SizedBox(),
-                          ],
-                          serial.length != 0 ? Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}") : SizedBox(),
                           Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.item['contacto1'].toString().split('[')[0]}"),
                           const SizedBox(height: 15),
                           Row(
@@ -571,6 +461,8 @@ class _ServicesState extends State<Services> {
                       children: [
                         ElevatedButton(
                           onPressed: () async {
+                            user = await datosUsuario();
+                            final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
                             showDialog(
                               context: context,
                               barrierDismissible: false,
@@ -586,15 +478,6 @@ class _ServicesState extends State<Services> {
                                 );
                               },
                             );
-                            // await Future.delayed(Duration(seconds: 2));
-
-                            List<MultipartFile> billetesFiles = [];
-                            for (var billete in arrbilletes) {
-                              billetesFiles.add(await MultipartFile.fromFile(
-                                billete['image'], // Ruta del archivo de imagen
-                                filename: billete['Serie'], // Nombre del archivo (el serial del billete)
-                              ));
-                            }
 
                             List<MultipartFile> firma_ = [];
                             String nombrefirma = '';
@@ -611,11 +494,8 @@ class _ServicesState extends State<Services> {
                               foto_.add(fotox);
                             }
                             FormData formData = FormData.fromMap({
-                              "pe_etapa_atencion": 3,
                               "pe_user_id": widget.user['user_id'],
                               "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                              "pe_serial_envase": serial,
-                              "pe_seriales_billetes": billetesFiles,
                               "pe_ruta_firma": nombrefirma,
                               "file": firma_,
                               "pe_ruta_foto": nombrefoto,
@@ -625,13 +505,13 @@ class _ServicesState extends State<Services> {
                               "pe_nombre_contacto": _controllerNombreVal.text,
                               "pe_observacion_contacto": _controllerObservVal.text
                             });
-                            var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                            var response = await dio.request('$link/api_mobile/apk_tripulacion/fin_servicio/',
+                                options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                             Navigator.of(context).pop();
                             if (response.statusCode == 200) {
                               Fluttertoast.showToast(msg: response.data['message']);
                               await UpdateList(widget.item['id_pedido']);
                             } else {
-                              print(response.statusMessage);
                               Fluttertoast.showToast(msg: response.statusMessage ?? response.data['message']);
                             }
                           },
@@ -695,23 +575,22 @@ class _ServicesState extends State<Services> {
 
   void _addParada() async {
     List<MultipartFile> files = [];
-    if (_controllerComprobante.text.isNotEmpty && selectMotivo != null) {
+    if (_controllerComprobante.text.isNotEmpty) {
       if (_fileImage != null) {
         MultipartFile arcparada = await MultipartFile.fromFile(_fileImage!.path, filename: _fileImage!.path.split('cache/')[1]);
         files.add(arcparada);
       }
       FormData formData = FormData.fromMap({
-        'pe_key_detalle_correlativo_id': comprobante['id'],
-        'pe_key_motivo_comprobante_visita_id': selectMotivo['id'],
+        'pe_motivo_falsa_parada': _controllerComprobante.text,
         'pe_ruta_foto': files.length > 0 ? _fileImage!.path.split('cache/')[1] : '',
-        'pe_key_asignacion_plan_diario_envase_id': widget.item['key_asignacion_plan_diario_envase_id'],
         'pe_user_id': widget.user['user_id'],
         "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
         'file': files,
       });
 
-      var dio = Dio();
       try {
+        user = await datosUsuario();
+        final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
         showDialog(
           context: context,
           barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
@@ -727,7 +606,7 @@ class _ServicesState extends State<Services> {
             );
           },
         );
-        var response = await dio.request('$link/api_mobile/apk_tripulacion/generar_falsa_parada/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+        var response = await dio.request('$link/api_mobile/apk_tripulacion/generar_falsa_parada/', options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
         if (response.statusCode == 200) {
           Navigator.pop(context);
           Fluttertoast.showToast(msg: response.data['message']);
@@ -766,7 +645,6 @@ class _ServicesState extends State<Services> {
 
   @override
   Widget build(BuildContext context) {
-    print(widget.item['modalidad_servicio']);
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: true,
@@ -785,7 +663,7 @@ class _ServicesState extends State<Services> {
             child: Column(
               children: [
                 WidgetDatos(context, widget.item),
-                if (widget.filtroStado == 1 && widget.item['key_estado_plan_id'] == 22)
+                if (widget.filtroStado == 1 && widget.item['key_estado_hoja_id'] == '70e06ba0-9745-4c9c-95b4-edde04779dc1')
                   _selectedService == ''
                       ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -854,26 +732,13 @@ class _ServicesState extends State<Services> {
                           child: Column(
                             children: [
                               TextFormField(
-                                enabled: _controllerComprobante.text.length == 0 ? true : false,
                                 controller: _controllerComprobante,
                                 decoration: const InputDecoration(
-                                  labelText: 'Comprobante Visita',
+                                  labelText: 'Motivo',
                                   border: OutlineInputBorder(),
                                 ),
                               ),
                               const SizedBox(height: 20),
-                              DropdownButtonFormField(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Motivos',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  items: motivos.map((item) {
-                                    return DropdownMenuItem(value: item, child: Text(item['nombre']));
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    selectMotivo = value ?? {};
-                                  }),
-                              const SizedBox(height: 10),
                               _fileImage != null
                                   ? Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -918,13 +783,13 @@ class _ServicesState extends State<Services> {
     );
   }
 
-  Future<void> UpdateList(int idPedido) async {
+  Future<void> UpdateList(String idPedido) async {
     var fecha = widget.fecha;
+    user = await datosUsuario();
+    final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
     var rpa = await dio.request(
-      '$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.user['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=22',
-      options: Options(
-        method: 'GET',
-      ),
+      '$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.user['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=EN RUTA',
+      options: Options(method: 'GET', headers: {'Authorization': basicAuth}),
     );
     setState(() {
       widget.item = rpa.data['resultSet'].firstWhere((item) => item['id_pedido'] == idPedido);
@@ -991,7 +856,7 @@ Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
       ),
       Row(children: [
         Text(
-          "ENVASE: ",
+          "BULTO: ",
           textScaleFactor: 1,
           style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
         ),

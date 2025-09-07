@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:microcash_tripulacion/theme/util.dart';
 import 'package:microcash_tripulacion/views/login.dart';
 import 'package:intl/intl.dart';
 import 'package:microcash_tripulacion/views/services.dart';
@@ -37,6 +38,9 @@ class _PedidoState extends State<Pedidos> {
         _currentDateTime = DateTime.now();
       });
     });
+    _UpdateList();
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _UpdateList());
+
   }
 
   @override
@@ -44,13 +48,15 @@ class _PedidoState extends State<Pedidos> {
     _timer.cancel();
     super.dispose();
   }
-
+  var user = {};
   Future<void> _UpdateList() async {
+    user =  await datosUsuario();
+    final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
     var fecha = fechaH;
-    var rpa = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=22',
-        options: Options(method: 'GET'));
-    var ra = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=19',
-        options: Options(method: 'GET'));
+    var rpa = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=EN RUTA',
+        options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
+    var ra = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=EJECUTADO',
+        options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
     setState(() {
       porAtender = rpa.data['resultSet'];
       atendido = ra.data['resultSet'];
@@ -76,8 +82,7 @@ class _PedidoState extends State<Pedidos> {
 
   @override
   Widget build(BuildContext context) {
-    _UpdateList();
-    int idHoja = 0;
+    String idHoja = '';
     String km = '';
 
     if (porAtender.isNotEmpty && porAtender[0]['id_hoja_ruta'] != null) {
@@ -118,7 +123,7 @@ class _PedidoState extends State<Pedidos> {
               Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Row(children: [
-                    _filteredParadas.length > 0 ? Text('RUTA:     ${_filteredParadas[0]['id_hoja_ruta']}', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)) : SizedBox(),
+                    _filteredParadas.length > 0 ? Text('RUTA:     ${_filteredParadas[0]['ruta']}', textScaleFactor: 1, style: TextStyle(fontWeight: FontWeight.bold)) : SizedBox(),
                   ])),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal, // Habilitar scroll horizontal
@@ -157,21 +162,25 @@ class _PedidoState extends State<Pedidos> {
                           final item = _filteredParadas[index];
                           return GestureDetector(
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => Services(item: item, user: widget.trabajador, filtroStado: _filtroEstado, fecha: fechaH)));
+                              if(_filteredParadas[index]['estado_detalle_hoja_ruta'] == "PROGRAMADA"){
+                                Fluttertoast.showToast(msg: "Punto No se encuenta en ruta",backgroundColor: Colors.amber);
+                              }else {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => Services(item: item, user: widget.trabajador, filtroStado: _filtroEstado, fecha: fechaH)));
+                              }
                             },
                             child: Container(
                               margin: EdgeInsets.symmetric(vertical: 5),
                               padding: EdgeInsets.all(5),
                               decoration: BoxDecoration(
-                                  color: _filteredParadas[index]['key_estado_detalle_hoja_id'] == 29
+                                  color: _filteredParadas[index]['key_estado_detalle_hoja_id'] == '47e3ad9a-b447-4979-ad0a-643e26e9891f'
                                       ? Colors.red.withOpacity(0.2)
-                                      : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 35
+                                      : _filteredParadas[index]['key_estado_detalle_hoja_id'] == '58491418-83db-4629-a913-a442d08c4aa1'
                                           ? Colors.green.withOpacity(0.2)
-                                          : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 33
+                                          : _filteredParadas[index]['key_estado_detalle_hoja_id'] == '3cd6b331-3210-4796-9f80-1d188fdd6b00'
                                               ? Colors.white70
-                                              : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 38
+                                              : _filteredParadas[index]['key_estado_detalle_hoja_id'] == '2fe25eba-342f-45e0-b3ed-8718203297b2'
                                                   ? Colors.orange.withOpacity(0.5)
-                                                  : Colors.yellow.withOpacity(0.2),
+                                                  : Colors.white70.withOpacity(0.2),
                                   borderRadius: BorderRadius.all(Radius.circular(10)),
                                   border: Border.all(color: Colors.black.withOpacity(0.3), width: 1)),
                               child: Column(
@@ -179,11 +188,11 @@ class _PedidoState extends State<Pedidos> {
                                 children: [
                                   Center(child: Text("${_filteredParadas[index]['estado_detalle_hoja_ruta']}", style: TextStyle(fontWeight: FontWeight.bold))),
                                   Row(children: [
-                                    _filteredParadas[index]['key_estado_detalle_hoja_id'] == 29
+                                    _filteredParadas[index]['key_estado_detalle_hoja_id'] == '47e3ad9a-b447-4979-ad0a-643e26e9891f'
                                         ? Row(children: [SizedBox(width: MediaQuery.sizeOf(context).width * 0.05), Icon(Icons.error, color: Colors.red), SizedBox(width: MediaQuery.sizeOf(context).width * 0.05)])
-                                        : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 35
+                                        : _filteredParadas[index]['key_estado_detalle_hoja_id'] == '58491418-83db-4629-a913-a442d08c4aa1'
                                             ? Row(children: [SizedBox(width: MediaQuery.sizeOf(context).width * 0.05), Icon(Icons.check, color: Colors.green), SizedBox(width: MediaQuery.sizeOf(context).width * 0.05)])
-                                            : _filteredParadas[index]['key_estado_detalle_hoja_id'] == 38
+                                            : _filteredParadas[index]['key_estado_detalle_hoja_id'] == '2fe25eba-342f-45e0-b3ed-8718203297b2'
                                                 ? Row(children: [
                                                     SizedBox(width: MediaQuery.sizeOf(context).width * 0.05),
                                                     Icon(Icons.cancel, color: Colors.orange),
@@ -198,14 +207,13 @@ class _PedidoState extends State<Pedidos> {
                                       Text("AAHH:   ${item['aahh']}", maxLines: 3, textScaleFactor: 1, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                                       Text("${item['punto_asociado']}", textScaleFactor: 1, style: TextStyle(fontSize: 12)),
                                       Text(item['direccion_punto'], textScaleFactor: 1, style: TextStyle(fontSize: 12)),
-                                      Text("Serial del Maletín:  ${item['lonchera']}", textScaleFactor: 1, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                                       Row(children: [
-                                        Text("ENVASE: ", textScaleFactor: 1, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                                        Text("BULTOS: ", textScaleFactor: 1, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                                         Flexible(child: Text("${item['envase']}", textScaleFactor: 1, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary)))
                                       ])
                                     ]))
                                   ]),
-                                  _filteredParadas[index]['key_estado_detalle_hoja_id'] == 35
+                                  _filteredParadas[index]['key_estado_detalle_hoja_id'] == '58491418-83db-4629-a913-a442d08c4aa1'
                                       ? Column(children: [
                                           Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                                             Text("Hora Llegada:  ${item['fecha_hora_llegada']}",
@@ -260,17 +268,16 @@ class _PedidoState extends State<Pedidos> {
                                       );
                                     },
                                   );
-                                  var headers = {'Content-Type': 'application/json'};
+                                  final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
+                                  var headers = {'Content-Type': 'application/json', 'Authorization': basicAuth};
                                   var data = json.encode({
                                     "pe_id_hoja_ruta": idHoja,
                                     "pe_kilometraje_llegada": _controllerKm.text,
                                   });
-                                  print(data);
                                   var response = await dio.request('$link/api_mobile/apk_tripulacion/preliquidar_movil/', options: Options(method: 'POST', headers: headers), data: data);
                                   Navigator.of(context).pop();
                                   setState(() {
                                     if (response.statusCode == 200) {
-                                      print(response.data);
                                       _controllerKm.text = '';
                                       _filtroEstado = 1;
                                       Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
