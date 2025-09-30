@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -53,17 +53,85 @@ class _ServicesState extends State<Services> {
   bool _validated = false;
   String _msg = '';
 
+  List<String> kPreguntas = [
+    '¿Cómo calificas la puntualidad del servicio?',
+    '¿El Operador fue amable y está debidamente uniformado?',
+    '¿El vehículo está limpio y en buen estado?',
+  ];
+
+  List<int?> kEncuestaRespuestas = [null, null, null];
+
+  Widget encuestaSimpleContainer() {
+    const iconos = <IconData>[
+      Icons.sentiment_very_dissatisfied,
+      Icons.sentiment_dissatisfied,
+      Icons.sentiment_neutral,
+      Icons.sentiment_satisfied,
+      Icons.sentiment_very_satisfied,
+    ];
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        Widget filaPregunta(int idx) {
+          final sel = kEncuestaRespuestas[idx];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${idx + 1}. ${kPreguntas[idx]}',
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Row(
+                  children: List.generate(5, (i) {
+                    final val = i + 1;
+                    final activo = sel == val;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: InkWell(
+                        onTap: () =>
+                            setState(() => kEncuestaRespuestas[idx] = val),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Icon(
+                          iconos[i],
+                          size: 26,
+                          color: activo ? Colors.blue : Colors.black87,
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              filaPregunta(0),
+              filaPregunta(1),
+              filaPregunta(2),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 2), (Timer timer) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       setState(() {
         _currentDateTime = DateTime.now();
       });
     });
     estado_plan = widget.item['key_estado_plan_id'];
     estado_detalle = widget.item['key_estado_detalle_hoja_id'];
-    if (widget.item['fecha_hora_llegada'] != null) {
+    if ( widget.item['fecha_hora_salida'] != null) {
       _selectedService = 'ATENCIÓN SERVICIO';
     }
   }
@@ -131,6 +199,9 @@ class _ServicesState extends State<Services> {
                     }
                     Navigator.of(context).pop();
                   }
+                  if (index == 3) {
+                    Navigator.of(context).pop();
+                  }
                   if (index == 2) {
                     FormData formData = FormData.fromMap({
                       "pe_user_id": widget.user['user_id'],
@@ -152,23 +223,45 @@ class _ServicesState extends State<Services> {
                   }
 
                   if (index == 4) {
-                    FormData formData = FormData.fromMap({
-                      "pe_user_id": widget.user['user_id'],
-                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                    });
-                    var response = await dio.request('$link/api_mobile/apk_tripulacion/salida_punto/',
-                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
-                    if (response.statusCode == 200) {
-                      Fluttertoast.showToast(msg: response.data['message']);
-                      if (index != 4) {
-                        await UpdateList(widget.item['id_pedido']);
-                      } else {
-                        Navigator.of(context).pop();
+                    bool isEncuestaCompleta() =>
+                        kEncuestaRespuestas.every((v) => v != null);
+                    if (isEncuestaCompleta()) {
+                      final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
+                      var response = await dio.request("$link/api_mobile/apk_tripulacion/registrar_encuesta_postservicio/", options: Options(headers: {'Authorization': basicAuth}, method: 'POST'), data: {
+                        "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                        "pe_calificacion_puntualidad": kEncuestaRespuestas[0],
+                        "pe_calificacion_amabilidad": kEncuestaRespuestas[1],
+                        "pe_calificacion_limpieza_vehiculo": kEncuestaRespuestas[2],
+                      });
+                      print(response);
+                      if (response.statusCode == 200) {
+                        FormData formData = FormData.fromMap({
+                          "pe_user_id": widget.user['user_id'],
+                          "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                        });
+                        var response = await dio.request('$link/api_mobile/apk_tripulacion/salida_punto/',
+                            options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                        if (response.statusCode == 200) {
+                          Fluttertoast.showToast(msg: response.data['message']);
+                          if (index != 4) {
+                            await UpdateList(widget.item['id_pedido']);
+                          } else {
+                            Navigator.of(context).pop();
+                          }
+                        } else {
+                          Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                        }
+                      }else {
+                        Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
                       }
+                      Navigator.of(context).pop();
                     } else {
-                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                      Navigator.of(context).pop();
+                      Fluttertoast.showToast(
+                        msg: "Por favor, completa la encuesta.",
+                        backgroundColor: Colors.amber.withOpacity(0.5),
+                      );
                     }
-                    Navigator.of(context).pop();
                   }
                 }
               } else {
@@ -724,6 +817,7 @@ class _ServicesState extends State<Services> {
                             ),
                             const SizedBox(height: 20),
                             _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
+                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] != null && widget.item['fecha_hora_salida'] == null ? encuestaSimpleContainer() : SizedBox(),
                           ],
                         )
                       : Container(
@@ -798,112 +892,286 @@ class _ServicesState extends State<Services> {
 }
 
 Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+  return Stack(
     children: [
-      Row(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Flexible(
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    "Secuencias: ${item['secuencia']}      AAHH: ${item['aahh']}",
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    textScaleFactor: 1,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )
-              ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        "Secuencias: ${item['secuencia']}      AAHH: ${item['aahh']}",
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        textScaleFactor: 1,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(width: 15),
+            ],
+          ),
+          Text(
+            "${item['punto_asociado']}",
+            textScaleFactor: 1,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 15),
-        ],
-      ),
-      Text(
-        "${item['punto_asociado']}",
-        textScaleFactor: 1,
-        style: TextStyle(
-          fontSize: 13,
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      Text(
-        item['direccion_punto'],
-        textScaleFactor: 1,
-        style: TextStyle(
-          fontSize: 13,
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      Row(
-        children: [
           Text(
-            "SERIAL DEL MALETÍN: ",
+            item['direccion_punto'],
             textScaleFactor: 1,
-            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          Text(item['lonchera']),
+          Row(
+            children: [
+              Text(
+                "SERIAL DEL MALETÍN: ",
+                textScaleFactor: 1,
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+              Text(item['lonchera']),
+            ],
+          ),
+          Row(children: [
+            Text(
+              "BULTO: ",
+              textScaleFactor: 1,
+              style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+            ),
+            Flexible(
+              child: Text(
+                "${item['envase']}",
+                textScaleFactor: 1,
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary),
+              ),
+            )
+          ]),
+          ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) {
+            // Dividir el valor del contacto en nombre y número
+            final match = RegExp(r'(.+?)\s+\[(\d+)\]').firstMatch(entry.value.toString());
+            if (match != null) {
+              final nombre = match.group(1); // Captura el nombre
+              final numero = match.group(2); // Captura el número
+              // Buscar el DNI relacionado en las claves 'dni_contacto_ope' o 'dni_contacto_ope2'
+              final dniKey = entry.key.endsWith('1')
+                  ? 'dni_contacto_ope'
+                  : entry.key.endsWith('2')
+                      ? 'dni_contacto_ope2'
+                      : null;
+              final dni = dniKey != null && item.containsKey(dniKey) ? item[dniKey].toString() : 'DNI NO DISPONIBLE';
+              return Text(
+                '${entry.key.toString().toUpperCase()}: $nombre $dni [$numero]',
+                textScaleFactor: 1,
+                style: const TextStyle(fontSize: 13),
+              );
+            }
+            // Si el formato no coincide, mostrar el valor original
+            return Text(
+              '${entry.key.toString().toUpperCase()}: ${entry.value.toString()}',
+              textScaleFactor: 1,
+              style: const TextStyle(fontSize: 13),
+            );
+          }),
+          Text(
+            "IMPORTE: ${item['importe']}",
+            textScaleFactor: 1,
+            style: const TextStyle(
+              fontSize: 13,
+            ),
+          ),
+          Text("${item['modalidad_servicio']}", textScaleFactor: 1, style: const TextStyle(fontSize: 13)),
+          SizedBox(height: 7)
         ],
       ),
-      Row(children: [
-        Text(
-          "BULTO: ",
-          textScaleFactor: 1,
-          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
-        ),
-        Flexible(
-          child: Text(
-            "${item['envase']}",
-            textScaleFactor: 1,
-            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary),
-          ),
-        )
-      ]),
-      ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) {
-        // Dividir el valor del contacto en nombre y número
-        final match = RegExp(r'(.+?)\s+\[(\d+)\]').firstMatch(entry.value.toString());
-        if (match != null) {
-          final nombre = match.group(1); // Captura el nombre
-          final numero = match.group(2); // Captura el número
-          // Buscar el DNI relacionado en las claves 'dni_contacto_ope' o 'dni_contacto_ope2'
-          final dniKey = entry.key.endsWith('1')
-              ? 'dni_contacto_ope'
-              : entry.key.endsWith('2')
-                  ? 'dni_contacto_ope2'
-                  : null;
-          final dni = dniKey != null && item.containsKey(dniKey) ? item[dniKey].toString() : 'DNI NO DISPONIBLE';
-
-          return Text(
-            '${entry.key.toString().toUpperCase()}: $nombre $dni [$numero]',
-            textScaleFactor: 1,
-            style: const TextStyle(fontSize: 13),
-          );
-        }
-        // Si el formato no coincide, mostrar el valor original
-        return Text(
-          '${entry.key.toString().toUpperCase()}: ${entry.value.toString()}',
-          textScaleFactor: 1,
-          style: const TextStyle(fontSize: 13),
-        );
-      }),
-      Text(
-        "IMPORTE: ${item['importe']}",
-        textScaleFactor: 1,
-        style: const TextStyle(
-          fontSize: 13,
-        ),
+      Positioned(
+        right: 12,
+        bottom: 12, // o top: 12 si lo quieres arriba
+        child: ElevatedButton.icon(
+            onPressed: () =>
+                _mostrarImagenDialog(context, item['ruta_foto_url']),
+            icon: const Icon(Icons.image, size: 16, color: Colors.white),
+            label: const Text(
+              "Foto",
+              style: TextStyle(fontSize: 12, color: Colors.white),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade300,
+              // rojo bajito
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            )),
       ),
-      Text("${item['modalidad_servicio']}", textScaleFactor: 1, style: const TextStyle(fontSize: 13)),
-      SizedBox(height: 7)
     ],
+  );
+}
+
+void _mostrarImagenDialog(BuildContext context, String? url) async {
+  // 1) Validar URL
+  if (url == null || url.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No hay URL de imagen')),
+    );
+    return;
+  }
+
+  // 2) Opcional: precargar para detectar errores antes de abrir
+  final imageProvider = NetworkImage(url);
+  try {
+    await precacheImage(imageProvider, context);
+  } catch (_) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No se pudo precargar la imagen')),
+    );
+    // igual abrimos el diálogo para mostrar el errorBuilder
+  }
+
+  // 3) Abrir diálogo con constraints y zoom
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierColor: Colors.black54,
+    builder: (ctx) {
+      final size = MediaQuery.of(ctx).size;
+      final maxW = math.min(size.width * 0.95, 1200.0);
+      final maxH = math.min(size.height * 0.9, 900.0);
+      final controller = TransformationController();
+
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        child: Stack(
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxW, maxHeight: maxH),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    color: Colors.black,
+                    child: StatefulBuilder(
+                      builder: (ctx2, setState) {
+                        final controller = TransformationController();
+                        ImageStreamListener? listener;
+
+                        void _setInitialFit(Size imgSize, Size viewport) {
+                          final iw = imgSize.width, ih = imgSize.height;
+                          final vw = viewport.width, vh = viewport.height;
+                          final scale = math.min(vw / iw, vh / ih); // contain
+                          final tx = (vw - iw * scale) / 2; // centrar X
+                          final ty = (vh - ih * scale) / 2; // centrar Y
+                          controller.value = Matrix4.identity()
+                            ..translate(tx, ty)
+                            ..scale(scale);
+                        }
+
+                        return LayoutBuilder(
+                          builder: (ctx3, cons) {
+                            final viewport =
+                                Size(cons.maxWidth, cons.maxHeight);
+
+                            // preparar stream para conocer tamaño real de la imagen
+                            final image = Image.network(url);
+                            final stream =
+                                image.image.resolve(const ImageConfiguration());
+
+                            listener ??= ImageStreamListener((info, _) {
+                              _setInitialFit(
+                                Size(info.image.width.toDouble(),
+                                    info.image.height.toDouble()),
+                                viewport,
+                              );
+                              // quitamos el listener luego de la primera vez
+                              stream.removeListener(listener!);
+                            });
+
+                            // Añadir listener (idempotente)
+                            stream.addListener(listener!);
+
+                            return GestureDetector(
+                              onDoubleTapDown: (d) {
+                                final m = controller.value;
+                                final zoomed = m.getMaxScaleOnAxis() > 1.05;
+                                if (zoomed) {
+                                  // volver al “fit to contain” centrado
+                                  // ojo: si quieres recordar el viewport, vuelve a calcular con _setInitialFit
+                                  _setInitialFit(
+                                    // usamos el último tamaño conocido; si no lo tienes, puedes volver a pedirlo
+                                    Size(cons.maxWidth, cons.maxHeight),
+                                    Size(cons.maxWidth, cons.maxHeight),
+                                  );
+                                } else {
+                                  const z = 2.5;
+                                  // zoom hacia el punto tocado
+                                  final f = d.localPosition;
+                                  controller.value = controller.value
+                                    ..translate(
+                                        -f.dx * (z - 1), -f.dy * (z - 1))
+                                    ..scale(z);
+                                }
+                                setState(() {});
+                              },
+                              child: InteractiveViewer(
+                                transformationController: controller,
+                                minScale: 0.5,
+                                maxScale: 6,
+                                panEnabled: true,
+                                clipBehavior: Clip.none,
+                                constrained: false,
+                                // permite crecer
+                                boundaryMargin: const EdgeInsets.all(80),
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  // importante: sin BoxFit para que respete tamaño real
+                                  child: image,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
   );
 }

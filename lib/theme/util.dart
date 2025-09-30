@@ -19,8 +19,7 @@ TextTheme createTextTheme(
   return textTheme;
 }
 
-
-
+String fechaH = "${DateTime.now().year.toString().padLeft(4, '0')}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}";
 
 Future<Map<String, String>> datosUsuario() async {
   var prefs = await SharedPreferences.getInstance();

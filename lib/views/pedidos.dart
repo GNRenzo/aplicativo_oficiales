@@ -27,19 +27,16 @@ class _PedidoState extends State<Pedidos> {
   DateTime _currentDateTime = DateTime.now();
   var dio = Dio();
 
-  String fechaH =
-      "${DateTime.now().year.toString().padLeft(4, '0')}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}";
-
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 2), (Timer timer) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       setState(() {
         _currentDateTime = DateTime.now();
       });
     });
     _UpdateList();
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _UpdateList());
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _UpdateList());
 
   }
 
@@ -52,10 +49,9 @@ class _PedidoState extends State<Pedidos> {
   Future<void> _UpdateList() async {
     user =  await datosUsuario();
     final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
-    var fecha = fechaH;
-    var rpa = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=EN RUTA',
+    var rpa = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}&pe_key_estado_plan_diario=EN RUTA',
         options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
-    var ra = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=EJECUTADO',
+    var ra = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}&pe_key_estado_plan_diario=EJECUTADO',
         options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
     setState(() {
       porAtender = rpa.data['resultSet'];
