@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -80,8 +81,8 @@ class _ServicesState extends State<Services> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('${idx + 1}. ${kPreguntas[idx]}',
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: MediaQuery.sizeOf(context).height*0.012),textScaleFactor: 1 ),
+                SizedBox(height:  MediaQuery.sizeOf(context).height*0.007),
                 Row(
                   children: List.generate(5, (i) {
                     final val = i + 1;
@@ -94,7 +95,7 @@ class _ServicesState extends State<Services> {
                         borderRadius: BorderRadius.circular(8),
                         child: Icon(
                           iconos[i],
-                          size: 26,
+                          size: MediaQuery.sizeOf(context).height*0.03,
                           color: activo ? Colors.blue : Colors.black87,
                         ),
                       ),
@@ -131,7 +132,7 @@ class _ServicesState extends State<Services> {
     });
     estado_plan = widget.item['key_estado_plan_id'];
     estado_detalle = widget.item['key_estado_detalle_hoja_id'];
-    if ( widget.item['fecha_hora_salida'] != null) {
+    if ( widget.item['fecha_hora_llegada'] != null) {
       _selectedService = 'ATENCIÓN SERVICIO';
     }
   }
@@ -199,9 +200,6 @@ class _ServicesState extends State<Services> {
                     }
                     Navigator.of(context).pop();
                   }
-                  if (index == 3) {
-                    Navigator.of(context).pop();
-                  }
                   if (index == 2) {
                     FormData formData = FormData.fromMap({
                       "pe_user_id": widget.user['user_id'],
@@ -223,45 +221,23 @@ class _ServicesState extends State<Services> {
                   }
 
                   if (index == 4) {
-                    bool isEncuestaCompleta() =>
-                        kEncuestaRespuestas.every((v) => v != null);
-                    if (isEncuestaCompleta()) {
-                      final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
-                      var response = await dio.request("$link/api_mobile/apk_tripulacion/registrar_encuesta_postservicio/", options: Options(headers: {'Authorization': basicAuth}, method: 'POST'), data: {
-                        "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                        "pe_calificacion_puntualidad": kEncuestaRespuestas[0],
-                        "pe_calificacion_amabilidad": kEncuestaRespuestas[1],
-                        "pe_calificacion_limpieza_vehiculo": kEncuestaRespuestas[2],
-                      });
-                      print(response);
-                      if (response.statusCode == 200) {
-                        FormData formData = FormData.fromMap({
-                          "pe_user_id": widget.user['user_id'],
-                          "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                        });
-                        var response = await dio.request('$link/api_mobile/apk_tripulacion/salida_punto/',
-                            options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
-                        if (response.statusCode == 200) {
-                          Fluttertoast.showToast(msg: response.data['message']);
-                          if (index != 4) {
-                            await UpdateList(widget.item['id_pedido']);
-                          } else {
-                            Navigator.of(context).pop();
-                          }
-                        } else {
-                          Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
-                        }
-                      }else {
-                        Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/salida_punto/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      if (index != 4) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
                       }
-                      Navigator.of(context).pop();
                     } else {
-                      Navigator.of(context).pop();
-                      Fluttertoast.showToast(
-                        msg: "Por favor, completa la encuesta.",
-                        backgroundColor: Colors.amber.withOpacity(0.5),
-                      );
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
                     }
+                    Navigator.of(context).pop();
                   }
                 }
               } else {
@@ -446,8 +422,58 @@ class _ServicesState extends State<Services> {
                   ],
                 )
               : SizedBox(),
-          // FOTO
+          // ENCUESTA
           _dataProc[1] && !_dataProc[2]
+              ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Divider(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: encuestaSimpleContainer(),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                      onPressed: () async{
+                        user = await datosUsuario();
+                        bool isEncuestaCompleta() => kEncuestaRespuestas.every((v) => v != null);
+                        if (isEncuestaCompleta()) {
+                          final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
+                          var response = await dio.request("$link/api_mobile/apk_tripulacion/registrar_encuesta_postservicio/", options: Options(headers: {'Authorization': basicAuth}, method: 'POST'), data: {
+                            "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                            "pe_calificacion_puntualidad": kEncuestaRespuestas[0],
+                            "pe_calificacion_amabilidad": kEncuestaRespuestas[1],
+                            "pe_calificacion_limpieza_vehiculo": kEncuestaRespuestas[2],
+                          });
+                          print(response);
+                          if (response.statusCode == 200) {
+                            setState(() {
+                              _dataProc[2] = true;
+                            });
+
+                          }else {
+                            Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                          }
+                        } else {
+                          Fluttertoast.showToast(
+                            msg: "Por favor, completa la encuesta.",
+                            backgroundColor: Colors.amber.withOpacity(0.5),
+                          );
+                        }
+                      },
+                      style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                      child: Text("Siguiente"))
+                ],
+              ),
+            ],
+          )
+              : SizedBox(),
+          // FOTO
+          _dataProc[2] && !_dataProc[3]
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -488,7 +514,7 @@ class _ServicesState extends State<Services> {
                             onPressed: () {
                               if (_fileFoto.toString().trim() != '' && _fileFoto != null) {
                                 setState(() {
-                                  _dataProc[2] = true;
+                                  _dataProc[3] = true;
                                 });
                               } else {
                                 Fluttertoast.showToast(msg: "Debe Registrar una Foto");
@@ -504,7 +530,7 @@ class _ServicesState extends State<Services> {
                 )
               : SizedBox(),
           // CONFIRMAR
-          _dataProc[2] && !_dataProc[3]
+          _dataProc[3] && !_dataProc[4]
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -629,24 +655,6 @@ class _ServicesState extends State<Services> {
   File? _fileImage;
   File? _fileFoto;
   final ImagePicker _picker = ImagePicker();
-
-  void _addBillete() {
-    if (_controllerSerieB.text.isNotEmpty && _fileImage != null) {
-      var billete = {
-        'Serie': _controllerSerieB.text,
-        'image': _fileImage != null ? _fileImage!.path : null,
-      };
-      setState(
-        () {
-          arrbilletes.add(billete);
-          _controllerSerieB.clear();
-          _fileImage = null;
-        },
-      );
-    } else {
-      Fluttertoast.showToast(msg: "Datos Incompletos ");
-    }
-  }
 
   void _takePhoto() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
@@ -817,7 +825,6 @@ class _ServicesState extends State<Services> {
                             ),
                             const SizedBox(height: 20),
                             _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
-                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] != null && widget.item['fecha_hora_salida'] == null ? encuestaSimpleContainer() : SizedBox(),
                           ],
                         )
                       : Container(
