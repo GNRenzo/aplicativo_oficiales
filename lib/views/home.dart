@@ -47,7 +47,6 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController serialKm = TextEditingController();
 
   Future<void> obtenerDatosServicio() async {
-    print("XXXX");
     user = await datosUsuario();
     final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
     Response response = await dio.request("$link/api_mobile/apk_tripulacion/contar_tipo_servicio/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}",

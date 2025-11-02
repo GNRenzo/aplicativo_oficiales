@@ -49,10 +49,8 @@ class _PedidoState extends State<Pedidos> {
   Future<void> _UpdateList() async {
     user =  await datosUsuario();
     final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
-    var rpa = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}&pe_key_estado_plan_diario=EN RUTA',
-        options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
-    var ra = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}&pe_key_estado_plan_diario=EJECUTADO',
-        options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
+    var rpa = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}&pe_key_estado_plan_diario=EN RUTA', options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
+    var ra = await dio.request('$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}&pe_key_estado_plan_diario=EJECUTADO', options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
     setState(() {
       porAtender = rpa.data['resultSet'];
       atendido = ra.data['resultSet'];

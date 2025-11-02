@@ -169,9 +169,15 @@ class _ServicesState extends State<Services> {
                 anterior = 'fecha_hora_llegada';
               }
               if (index == 3) {
-                anterior = 'fecha_hora_inicio_servicio';
+                anterior = 'ingreso_local';
               }
               if (index == 4) {
+                anterior = 'fecha_hora_inicio_servicio';
+              }
+              if (index == 5) {
+                anterior = 'verificacion_cliente';
+              }
+              if (index == 6) {
                 anterior = 'fecha_hora_fin_servicio';
               }
               if (index == 1 || widget.item[anterior] != null) {
@@ -190,7 +196,7 @@ class _ServicesState extends State<Services> {
                         options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
                       Fluttertoast.showToast(msg: response.data['message']);
-                      if (index != 4) {
+                      if (index != 6) {
                         await UpdateList(widget.item['id_pedido']);
                       } else {
                         Navigator.of(context).pop();
@@ -201,6 +207,25 @@ class _ServicesState extends State<Services> {
                     Navigator.of(context).pop();
                   }
                   if (index == 2) {
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/ingreso_local/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      if (index != 6) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    } else {
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    }
+                    Navigator.of(context).pop();
+                  }
+                  if (index == 3) {
                     FormData formData = FormData.fromMap({
                       "pe_user_id": widget.user['user_id'],
                       "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
@@ -225,12 +250,34 @@ class _ServicesState extends State<Services> {
                       "pe_user_id": widget.user['user_id'],
                       "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
                     });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/verificacion_cliente/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      if (index != 6) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    } else {
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    }
+                    Navigator.of(context).pop();
+                  }
+                  if (index == 6) {
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
                     var response = await dio.request('$link/api_mobile/apk_tripulacion/salida_punto/',
                         options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
                       Fluttertoast.showToast(msg: response.data['message']);
-                      if (index != 4) {
+                      if (index != 5) {
                         await UpdateList(widget.item['id_pedido']);
+                        _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+                          Navigator.of(context).pop();
+                        });
                       } else {
                         Navigator.of(context).pop();
                       }
@@ -817,14 +864,21 @@ class _ServicesState extends State<Services> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Expanded(child: _buildButton('Llegada\npunto', 'fecha_hora_llegada', 1)),
-                                Expanded(child: _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2)),
-                                Expanded(child: _buildButton('Fin\nServicio', 'fecha_hora_fin_servicio', 3)),
-                                Expanded(child: _buildButton('Salida\nPunto', 'fecha_hora_salida', 4)),
+                                Expanded(child: _buildButton('1. Llegada\npunto', 'fecha_hora_llegada', 1)),
+                                Expanded(child: _buildButton('2. Ingreso\nLocal', 'ingreso_local', 2)),
+                                Expanded(child: _buildButton('3. Inicio\nServicio', 'fecha_hora_inicio_servicio', 3)),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(child: _buildButton('4. Verificación', 'verificacion_cliente', 4)),
+                                Expanded(child: _buildButton('5. Fin\nServicio', 'fecha_hora_fin_servicio', 5)),
+                                Expanded(child: _buildButton('6. Salida\nPunto', 'fecha_hora_salida', 6)),
                               ],
                             ),
                             const SizedBox(height: 20),
-                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
+                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['verificacion_cliente'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
                           ],
                         )
                       : Container(
