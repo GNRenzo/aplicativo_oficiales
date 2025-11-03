@@ -234,7 +234,7 @@ class _ServicesState extends State<Services> {
                         options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
                       Fluttertoast.showToast(msg: response.data['message']);
-                      if (index != 4) {
+                      if (index != 6) {
                         await UpdateList(widget.item['id_pedido']);
                       } else {
                         Navigator.of(context).pop();
@@ -272,15 +272,15 @@ class _ServicesState extends State<Services> {
                     var response = await dio.request('$link/api_mobile/apk_tripulacion/salida_punto/',
                         options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
-                      Fluttertoast.showToast(msg: response.data['message']);
-                      if (index != 5) {
+                      if (index != 6) {
                         await UpdateList(widget.item['id_pedido']);
-                        _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+                        _timer = Timer.periodic(const Duration(microseconds: 1005000), (Timer timer) {
                           Navigator.of(context).pop();
                         });
                       } else {
                         Navigator.of(context).pop();
                       }
+                      Fluttertoast.showToast(msg: response.data['message']);
                     } else {
                       Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
                     }
@@ -675,8 +675,8 @@ class _ServicesState extends State<Services> {
                                 options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                             Navigator.of(context).pop();
                             if (response.statusCode == 200) {
-                              Fluttertoast.showToast(msg: response.data['message']);
                               await UpdateList(widget.item['id_pedido']);
+                              Fluttertoast.showToast(msg: response.data['message']);
                             } else {
                               Fluttertoast.showToast(msg: response.statusMessage ?? response.data['message']);
                             }
