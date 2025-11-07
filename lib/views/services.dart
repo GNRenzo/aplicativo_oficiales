@@ -244,13 +244,16 @@ class _ServicesState extends State<Services> {
                     }
                     Navigator.of(context).pop();
                   }
+                  //if (index == 4) {
+                  //  Navigator.of(context).pop();
+                  //}
+                  if (index == 5) {
 
-                  if (index == 4) {
                     FormData formData = FormData.fromMap({
                       "pe_user_id": widget.user['user_id'],
                       "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
                     });
-                    var response = await dio.request('$link/api_mobile/apk_tripulacion/verificacion_cliente/',
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/fin_servicio/',
                         options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
                       Fluttertoast.showToast(msg: response.data['message']);
@@ -671,7 +674,7 @@ class _ServicesState extends State<Services> {
                               "pe_nombre_contacto": _controllerNombreVal.text,
                               "pe_observacion_contacto": _controllerObservVal.text
                             });
-                            var response = await dio.request('$link/api_mobile/apk_tripulacion/fin_servicio/',
+                            var response = await dio.request('$link/api_mobile/apk_tripulacion/verificacion_cliente/',
                                 options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                             Navigator.of(context).pop();
                             if (response.statusCode == 200) {
@@ -878,7 +881,7 @@ class _ServicesState extends State<Services> {
                               ],
                             ),
                             const SizedBox(height: 20),
-                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['verificacion_cliente'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
+                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['verificacion_cliente'] == null ? FormularioFinServicio() : SizedBox(),
                           ],
                         )
                       : Container(
