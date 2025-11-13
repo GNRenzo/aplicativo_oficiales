@@ -244,9 +244,9 @@ class _ServicesState extends State<Services> {
                     }
                     Navigator.of(context).pop();
                   }
-                  //if (index == 4) {
-                  //  Navigator.of(context).pop();
-                  //}
+                  if (index == 4) {
+                    Navigator.of(context).pop();
+                  }
                   if (index == 5) {
 
                     FormData formData = FormData.fromMap({
