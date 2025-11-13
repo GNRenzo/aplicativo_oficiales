@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'dart:math' as math;
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:microcash_tripulacion/theme/util.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as ima;
@@ -34,10 +37,9 @@ class _ServicesState extends State<Services> {
   var comprobante = {};
   var motivos = [];
   late final TextEditingController _controllerComprobante = TextEditingController();
-  var selectMotivo;
 
-  int estado_plan = 0;
-  int estado_detalle = 0;
+  String estado_plan = '';
+  String estado_detalle = '';
   List arrbilletes = [];
   var firma;
   var foto;
@@ -52,30 +54,90 @@ class _ServicesState extends State<Services> {
   bool _validated = false;
   String _msg = '';
 
+  List<String> kPreguntas = [
+    '¿Cómo calificas la puntualidad del servicio?',
+    '¿El Operador fue amable y está debidamente uniformado?',
+    '¿El vehículo está limpio y en buen estado?',
+  ];
+
+  List<int?> kEncuestaRespuestas = [null, null, null];
+
+  Widget encuestaSimpleContainer() {
+    const iconos = <IconData>[
+      Icons.sentiment_very_dissatisfied,
+      Icons.sentiment_dissatisfied,
+      Icons.sentiment_neutral,
+      Icons.sentiment_satisfied,
+      Icons.sentiment_very_satisfied,
+    ];
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        Widget filaPregunta(int idx) {
+          final sel = kEncuestaRespuestas[idx];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${idx + 1}. ${kPreguntas[idx]}',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: MediaQuery.sizeOf(context).height*0.012),textScaleFactor: 1 ),
+                SizedBox(height:  MediaQuery.sizeOf(context).height*0.007),
+                Row(
+                  children: List.generate(5, (i) {
+                    final val = i + 1;
+                    final activo = sel == val;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: InkWell(
+                        onTap: () =>
+                            setState(() => kEncuestaRespuestas[idx] = val),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Icon(
+                          iconos[i],
+                          size: MediaQuery.sizeOf(context).height*0.03,
+                          color: activo ? Colors.blue : Colors.black87,
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              filaPregunta(0),
+              filaPregunta(1),
+              filaPregunta(2),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
-    obtenerDatos();
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 2), (Timer timer) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       setState(() {
         _currentDateTime = DateTime.now();
       });
     });
     estado_plan = widget.item['key_estado_plan_id'];
     estado_detalle = widget.item['key_estado_detalle_hoja_id'];
-    if (widget.item['fecha_hora_llegada'] != null) {
+    if ( widget.item['fecha_hora_llegada'] != null) {
       _selectedService = 'ATENCIÓN SERVICIO';
     }
   }
 
-  obtenerDatos() async {
-    var response = await dio.request('$link/api_mobile/apk_tripulacion/siguiente_cv/', options: Options(method: 'GET'));
-    comprobante = (response.data['resultSet'][0]) ?? {};
-    _controllerComprobante.text = (response.data['resultSet'][0]['correlativo']) ?? {};
-
-    var response2 = await dio.request('$link/tablas/motivo/listar/?key_estado_id=1', options: Options(method: 'GET'));
-    motivos = response2.data['resultSet'];
-  }
+  var user = {};
 
   List<bool> _dataProc = [false, false, false, false, false, false];
 
@@ -102,15 +164,20 @@ class _ServicesState extends State<Services> {
                   );
                 },
               );
-              print("$estado_plan  $estado_detalle");
               String anterior = "";
               if (index == 2) {
                 anterior = 'fecha_hora_llegada';
               }
               if (index == 3) {
-                anterior = 'fecha_hora_inicio_servicio';
+                anterior = 'ingreso_local';
               }
               if (index == 4) {
+                anterior = 'fecha_hora_inicio_servicio';
+              }
+              if (index == 5) {
+                anterior = 'verificacion_cliente';
+              }
+              if (index == 6) {
                 anterior = 'fecha_hora_fin_servicio';
               }
               if (index == 1 || widget.item[anterior] != null) {
@@ -118,27 +185,105 @@ class _ServicesState extends State<Services> {
                   Fluttertoast.showToast(msg: "Dato Ya Registrado");
                   Navigator.of(context).pop();
                 } else {
-                  if (index != 3) {
+                  user = await datosUsuario();
+                  final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
+                  if (index == 1) {
                     FormData formData = FormData.fromMap({
-                      "pe_etapa_atencion": index,
                       "pe_user_id": widget.user['user_id'],
                       "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                      "pe_serial_envase": "",
-                      "pe_seriales_billetes": "",
-                      "pe_ruta_firma": "",
-                      "pe_validacion_contacto": "",
-                      "pe_dni_contacto": "",
-                      "pe_nombre_contacto": "",
-                      "pe_observacion_contacto": ""
                     });
-                    var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/llegada_punto/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                     if (response.statusCode == 200) {
                       Fluttertoast.showToast(msg: response.data['message']);
-                      if (index != 4) {
+                      if (index != 6) {
                         await UpdateList(widget.item['id_pedido']);
                       } else {
                         Navigator.of(context).pop();
                       }
+                    } else {
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    }
+                    Navigator.of(context).pop();
+                  }
+                  if (index == 2) {
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/ingreso_local/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      if (index != 6) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    } else {
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    }
+                    Navigator.of(context).pop();
+                  }
+                  if (index == 3) {
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/inicio_servicio/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      if (index != 6) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    } else {
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    }
+                    Navigator.of(context).pop();
+                  }
+                  if (index == 4) {
+                    Navigator.of(context).pop();
+                  }
+                  if (index == 5) {
+
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/fin_servicio/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      Fluttertoast.showToast(msg: response.data['message']);
+                      if (index != 6) {
+                        await UpdateList(widget.item['id_pedido']);
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    } else {
+                      Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                    }
+                    Navigator.of(context).pop();
+                  }
+                  if (index == 6) {
+                    FormData formData = FormData.fromMap({
+                      "pe_user_id": widget.user['user_id'],
+                      "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                    });
+                    var response = await dio.request('$link/api_mobile/apk_tripulacion/salida_punto/',
+                        options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
+                    if (response.statusCode == 200) {
+                      if (index != 6) {
+                        await UpdateList(widget.item['id_pedido']);
+                        _timer = Timer.periodic(const Duration(microseconds: 1005000), (Timer timer) {
+                          Navigator.of(context).pop();
+                        });
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                      Fluttertoast.showToast(msg: response.data['message']);
                     } else {
                       Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
                     }
@@ -192,9 +337,11 @@ class _ServicesState extends State<Services> {
                         SizedBox(width: 10),
                         ElevatedButton(
                             onPressed: () async {
+                              user = await datosUsuario();
+                              final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
                               var response = await dio.request(
                                   '$link/api_mobile/apk_tripulacion/validar_contacto_punto/?pe_key_punto_asociado=${widget.item['key_punto_asociado']}&pe_dni_contacto=${_controllerDNIval.text}',
-                                  options: Options(method: 'GET'));
+                                  options: Options(headers: {'Authorization': basicAuth}, method: 'GET'));
                               respUser = response.data['resultSet'][0]['validator'];
                               setState(() {
                                 _validated = response.data['resultSet'][0]['validator'];
@@ -250,140 +397,8 @@ class _ServicesState extends State<Services> {
                   ],
                 )
               : SizedBox(),
-          //BILLETES SOSPECHOSOS
-          _dataProc[0] && !_dataProc[1]
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Divider(),
-                    const Center(child: Text("BILLETES SOSPECHOSOS", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-                    SizedBox(height: 10),
-                    Row(children: [arrbilletes != null ? Text("CANTIDAD DE BILLETES SOSPECHOSOS  ${arrbilletes.length}", textScaleFactor: 1, style: TextStyle(fontSize: 13)) : SizedBox()]),
-                    SizedBox(height: 10),
-                    TextFormField(controller: _controllerSerieB, decoration: InputDecoration(labelText: 'Serial de Billete', border: OutlineInputBorder())),
-                    SizedBox(height: 10),
-                    _fileImage != null ? Padding(padding: const EdgeInsets.all(8.0), child: Center(child: Image.file(_fileImage!, height: 120))) : Container(),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                      ElevatedButton(
-                          style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                          onPressed: _takePhoto,
-                          child: Text('Foto', textAlign: TextAlign.center, textScaleFactor: 1)),
-                      ElevatedButton(
-                          style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                              foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                          onPressed: _addBillete,
-                          child: Text('Agregar', textAlign: TextAlign.center, textScaleFactor: 1))
-                    ]),
-                    SizedBox(height: 10),
-                    arrbilletes.length > 0
-                        ? Container(
-                            height: int.parse(arrbilletes.length.toString()) * 50,
-                            child: ListView.builder(
-                                physics: BouncingScrollPhysics(),
-                                itemCount: arrbilletes.length,
-                                itemBuilder: (context, index) {
-                                  var billete = arrbilletes[index];
-                                  return ListTile(
-                                      title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('${billete['Serie']}'), Text(billete['image'] != null ? 'Ver' : 'Sin imagen')]),
-                                      onTap: billete['image'] != null ? () => _viewImage(billete['image']) : null);
-                                }))
-                        : SizedBox(),
-                    Container(
-                      width: MediaQuery.sizeOf(context).width,
-                      child: ElevatedButton(
-                        style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                        onPressed: () {
-                          if (arrbilletes.length == 0) {
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(title: Text("¿Estás seguro?"), content: Text("No hay billetes en la lista. ¿Deseas continuar?"), actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text("Cancelar")),
-                                    TextButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            _dataProc[1] = true;
-                                          });
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text("Continuar"))
-                                  ]);
-                                });
-                          } else {
-                            setState(() {
-                              _dataProc[1] = true;
-                            });
-                          }
-                        },
-                        child: Text("Siguiente"),
-                      ),
-                    )
-                  ],
-                )
-              : SizedBox(),
-          //REGISTRE SERIAL DE ENVASE
-          _dataProc[1] && !_dataProc[2]
-              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Divider(),
-                  const SizedBox(height: 10),
-                  const Center(child: Text("REGISTRE SERIAL DE ENVASE\nMICROCASH", textScaleFactor: 1, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-                  const SizedBox(height: 40),
-                  TextFormField(
-                      controller: _controllerSerial,
-                      decoration: const InputDecoration(labelText: 'Número de Serial', border: OutlineInputBorder()),
-                      onChanged: (value) async {
-                        serial = value;
-                        if (value.length == 8) {
-                          if (serial.toString().trim() == '' || serial == null) {
-                            Fluttertoast.showToast(msg: "Debe Ingresar Serial");
-                            return;
-                          }
-                          var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}', options: Options(method: 'GET'));
-                          if (response.data['resultSet'][0]['validator']) {
-                            setState(() {
-                              _dataProc[2] = true;
-                            });
-                          } else {
-                            Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
-                          }
-                        }
-                      },
-                      textInputAction: TextInputAction.next),
-                  const SizedBox(height: 40),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                    ElevatedButton(
-                        style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
-                            foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
-                        onPressed: () async {
-                          if (serial.toString().trim() == '' || serial == null) {
-                            Fluttertoast.showToast(msg: "Debe Ingresar Serial");
-                            return;
-                          }
-                          var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_envase_recojo/?pe_serial_envase=${_controllerSerial.text}', options: Options(method: 'GET'));
-                          if (response.data['resultSet'][0]['validator']) {
-                            setState(() {
-                              _dataProc[2] = true;
-                            });
-                          } else {
-                            Fluttertoast.showToast(msg: response.data['resultSet'][0]['message']);
-                          }
-                        },
-                        child: Text("Siguiente"))
-                  ])
-                ])
-              : SizedBox(),
           // FIRMA CONTACTO
-          _dataProc[2] && !_dataProc[3]
+          _dataProc[0] && !_dataProc[1]
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -440,7 +455,7 @@ class _ServicesState extends State<Services> {
                                   onPressed: () {
                                     if (firma.toString().trim() != '' && firma != null) {
                                       setState(() {
-                                        _dataProc[3] = true;
+                                        _dataProc[1] = true;
                                         foto = null;
                                       });
                                     } else {
@@ -457,8 +472,58 @@ class _ServicesState extends State<Services> {
                   ],
                 )
               : SizedBox(),
+          // ENCUESTA
+          _dataProc[1] && !_dataProc[2]
+              ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Divider(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: encuestaSimpleContainer(),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                      onPressed: () async{
+                        user = await datosUsuario();
+                        bool isEncuestaCompleta() => kEncuestaRespuestas.every((v) => v != null);
+                        if (isEncuestaCompleta()) {
+                          final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
+                          var response = await dio.request("$link/api_mobile/apk_tripulacion/registrar_encuesta_postservicio/", options: Options(headers: {'Authorization': basicAuth}, method: 'POST'), data: {
+                            "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
+                            "pe_calificacion_puntualidad": kEncuestaRespuestas[0],
+                            "pe_calificacion_amabilidad": kEncuestaRespuestas[1],
+                            "pe_calificacion_limpieza_vehiculo": kEncuestaRespuestas[2],
+                          });
+                          print(response);
+                          if (response.statusCode == 200) {
+                            setState(() {
+                              _dataProc[2] = true;
+                            });
+
+                          }else {
+                            Fluttertoast.showToast(msg: "Error ${response.statusMessage}");
+                          }
+                        } else {
+                          Fluttertoast.showToast(
+                            msg: "Por favor, completa la encuesta.",
+                            backgroundColor: Colors.amber.withOpacity(0.5),
+                          );
+                        }
+                      },
+                      style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.tertiaryContainer),
+                          foregroundColor: MaterialStateProperty.all<Color>(Theme.of(context).colorScheme.onPrimaryFixed)),
+                      child: Text("Siguiente"))
+                ],
+              ),
+            ],
+          )
+              : SizedBox(),
           // FOTO
-          _dataProc[3] && !_dataProc[4]
+          _dataProc[2] && !_dataProc[3]
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -499,7 +564,7 @@ class _ServicesState extends State<Services> {
                             onPressed: () {
                               if (_fileFoto.toString().trim() != '' && _fileFoto != null) {
                                 setState(() {
-                                  _dataProc[4] = true;
+                                  _dataProc[3] = true;
                                 });
                               } else {
                                 Fluttertoast.showToast(msg: "Debe Registrar una Foto");
@@ -515,7 +580,7 @@ class _ServicesState extends State<Services> {
                 )
               : SizedBox(),
           // CONFIRMAR
-          _dataProc[4] && !_dataProc[5]
+          _dataProc[3] && !_dataProc[4]
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -526,13 +591,7 @@ class _ServicesState extends State<Services> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(textScaleFactor: 1, "CS CANJE:  ${widget.item['comprobante_servicio']}"),
                           Text(textScaleFactor: 1, "IMPORTE:  ${widget.item['importe']}"),
-                          if (arrbilletes.length > 0) ...[
-                            Text(textScaleFactor: 1, "BILLETES SOSPECHOSOS:  ${arrbilletes.toList().length}"),
-                            arrbilletes.toList().length != 0 ? Text(textScaleFactor: 1, "SERIALES: $seriales") : SizedBox(),
-                          ],
-                          serial.length != 0 ? Text(textScaleFactor: 1, "ENVASE SERIAL: ${serial}") : SizedBox(),
                           Text(textScaleFactor: 1, "CONFORMIDAD: ${widget.item['contacto1'].toString().split('[')[0]}"),
                           const SizedBox(height: 15),
                           Row(
@@ -571,6 +630,8 @@ class _ServicesState extends State<Services> {
                       children: [
                         ElevatedButton(
                           onPressed: () async {
+                            user = await datosUsuario();
+                            final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
                             showDialog(
                               context: context,
                               barrierDismissible: false,
@@ -586,15 +647,6 @@ class _ServicesState extends State<Services> {
                                 );
                               },
                             );
-                            // await Future.delayed(Duration(seconds: 2));
-
-                            List<MultipartFile> billetesFiles = [];
-                            for (var billete in arrbilletes) {
-                              billetesFiles.add(await MultipartFile.fromFile(
-                                billete['image'], // Ruta del archivo de imagen
-                                filename: billete['Serie'], // Nombre del archivo (el serial del billete)
-                              ));
-                            }
 
                             List<MultipartFile> firma_ = [];
                             String nombrefirma = '';
@@ -611,11 +663,8 @@ class _ServicesState extends State<Services> {
                               foto_.add(fotox);
                             }
                             FormData formData = FormData.fromMap({
-                              "pe_etapa_atencion": 3,
                               "pe_user_id": widget.user['user_id'],
                               "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
-                              "pe_serial_envase": serial,
-                              "pe_seriales_billetes": billetesFiles,
                               "pe_ruta_firma": nombrefirma,
                               "file": firma_,
                               "pe_ruta_foto": nombrefoto,
@@ -625,13 +674,13 @@ class _ServicesState extends State<Services> {
                               "pe_nombre_contacto": _controllerNombreVal.text,
                               "pe_observacion_contacto": _controllerObservVal.text
                             });
-                            var response = await dio.request('$link/api_mobile/apk_tripulacion/atencion_servicio/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+                            var response = await dio.request('$link/api_mobile/apk_tripulacion/verificacion_cliente/',
+                                options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
                             Navigator.of(context).pop();
                             if (response.statusCode == 200) {
-                              Fluttertoast.showToast(msg: response.data['message']);
                               await UpdateList(widget.item['id_pedido']);
+                              Fluttertoast.showToast(msg: response.data['message']);
                             } else {
-                              print(response.statusMessage);
                               Fluttertoast.showToast(msg: response.statusMessage ?? response.data['message']);
                             }
                           },
@@ -657,24 +706,6 @@ class _ServicesState extends State<Services> {
   File? _fileFoto;
   final ImagePicker _picker = ImagePicker();
 
-  void _addBillete() {
-    if (_controllerSerieB.text.isNotEmpty && _fileImage != null) {
-      var billete = {
-        'Serie': _controllerSerieB.text,
-        'image': _fileImage != null ? _fileImage!.path : null,
-      };
-      setState(
-        () {
-          arrbilletes.add(billete);
-          _controllerSerieB.clear();
-          _fileImage = null;
-        },
-      );
-    } else {
-      Fluttertoast.showToast(msg: "Datos Incompletos ");
-    }
-  }
-
   void _takePhoto() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
@@ -695,23 +726,22 @@ class _ServicesState extends State<Services> {
 
   void _addParada() async {
     List<MultipartFile> files = [];
-    if (_controllerComprobante.text.isNotEmpty && selectMotivo != null) {
+    if (_controllerComprobante.text.isNotEmpty) {
       if (_fileImage != null) {
         MultipartFile arcparada = await MultipartFile.fromFile(_fileImage!.path, filename: _fileImage!.path.split('cache/')[1]);
         files.add(arcparada);
       }
       FormData formData = FormData.fromMap({
-        'pe_key_detalle_correlativo_id': comprobante['id'],
-        'pe_key_motivo_comprobante_visita_id': selectMotivo['id'],
+        'pe_motivo_falsa_parada': _controllerComprobante.text,
         'pe_ruta_foto': files.length > 0 ? _fileImage!.path.split('cache/')[1] : '',
-        'pe_key_asignacion_plan_diario_envase_id': widget.item['key_asignacion_plan_diario_envase_id'],
         'pe_user_id': widget.user['user_id'],
         "pe_key_detalle_hoja_ruta_id": widget.item['id_detalle_hoja_ruta'],
         'file': files,
       });
 
-      var dio = Dio();
       try {
+        user = await datosUsuario();
+        final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
         showDialog(
           context: context,
           barrierDismissible: false, // Evitar que se cierre al tocar fuera del dialog
@@ -727,7 +757,7 @@ class _ServicesState extends State<Services> {
             );
           },
         );
-        var response = await dio.request('$link/api_mobile/apk_tripulacion/generar_falsa_parada/', options: Options(method: 'POST', headers: {'Content-Type': 'multipart/form-data'}), data: formData);
+        var response = await dio.request('$link/api_mobile/apk_tripulacion/generar_falsa_parada/', options: Options(method: 'POST', headers: {'Authorization': basicAuth, 'Content-Type': 'multipart/form-data'}), data: formData);
         if (response.statusCode == 200) {
           Navigator.pop(context);
           Fluttertoast.showToast(msg: response.data['message']);
@@ -766,7 +796,6 @@ class _ServicesState extends State<Services> {
 
   @override
   Widget build(BuildContext context) {
-    print(widget.item['modalidad_servicio']);
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: true,
@@ -785,7 +814,7 @@ class _ServicesState extends State<Services> {
             child: Column(
               children: [
                 WidgetDatos(context, widget.item),
-                if (widget.filtroStado == 1 && widget.item['key_estado_plan_id'] == 22)
+                if (widget.filtroStado == 1 && widget.item['key_estado_hoja_id'] == '70e06ba0-9745-4c9c-95b4-edde04779dc1')
                   _selectedService == ''
                       ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -838,14 +867,21 @@ class _ServicesState extends State<Services> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Expanded(child: _buildButton('Llegada\npunto', 'fecha_hora_llegada', 1)),
-                                Expanded(child: _buildButton('Inicio\nServicio', 'fecha_hora_inicio_servicio', 2)),
-                                Expanded(child: _buildButton('Fin\nServicio', 'fecha_hora_fin_servicio', 3)),
-                                Expanded(child: _buildButton('Salida\nPunto', 'fecha_hora_salida', 4)),
+                                Expanded(child: _buildButton('1. Llegada\npunto', 'fecha_hora_llegada', 1)),
+                                Expanded(child: _buildButton('2. Ingreso\nLocal', 'ingreso_local', 2)),
+                                Expanded(child: _buildButton('3. Inicio\nServicio', 'fecha_hora_inicio_servicio', 3)),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(child: _buildButton('4. Verificación', 'verificacion_cliente', 4)),
+                                Expanded(child: _buildButton('5. Fin\nServicio', 'fecha_hora_fin_servicio', 5)),
+                                Expanded(child: _buildButton('6. Salida\nPunto', 'fecha_hora_salida', 6)),
                               ],
                             ),
                             const SizedBox(height: 20),
-                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['fecha_hora_fin_servicio'] == null ? FormularioFinServicio() : SizedBox(),
+                            _selectedService == 'ATENCIÓN SERVICIO' && widget.item['fecha_hora_inicio_servicio'] != null && widget.item['verificacion_cliente'] == null ? FormularioFinServicio() : SizedBox(),
                           ],
                         )
                       : Container(
@@ -854,26 +890,13 @@ class _ServicesState extends State<Services> {
                           child: Column(
                             children: [
                               TextFormField(
-                                enabled: _controllerComprobante.text.length == 0 ? true : false,
                                 controller: _controllerComprobante,
                                 decoration: const InputDecoration(
-                                  labelText: 'Comprobante Visita',
+                                  labelText: 'Motivo',
                                   border: OutlineInputBorder(),
                                 ),
                               ),
                               const SizedBox(height: 20),
-                              DropdownButtonFormField(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Motivos',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  items: motivos.map((item) {
-                                    return DropdownMenuItem(value: item, child: Text(item['nombre']));
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    selectMotivo = value ?? {};
-                                  }),
-                              const SizedBox(height: 10),
                               _fileImage != null
                                   ? Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -918,13 +941,13 @@ class _ServicesState extends State<Services> {
     );
   }
 
-  Future<void> UpdateList(int idPedido) async {
+  Future<void> UpdateList(String idPedido) async {
     var fecha = widget.fecha;
+    user = await datosUsuario();
+    final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
     var rpa = await dio.request(
-      '$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.user['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=22',
-      options: Options(
-        method: 'GET',
-      ),
+      '$link/api_mobile/apk_tripulacion/listar_pedidos/?pe_user_id=${widget.user['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}&pe_key_estado_plan_diario=EN RUTA',
+      options: Options(method: 'GET', headers: {'Authorization': basicAuth}),
     );
     setState(() {
       widget.item = rpa.data['resultSet'].firstWhere((item) => item['id_pedido'] == idPedido);
@@ -933,112 +956,286 @@ class _ServicesState extends State<Services> {
 }
 
 Widget WidgetDatos(BuildContext context, Map<String, dynamic> item) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+  return Stack(
     children: [
-      Row(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Flexible(
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    "Secuencias: ${item['secuencia']}      AAHH: ${item['aahh']}",
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    textScaleFactor: 1,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )
-              ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        "Secuencias: ${item['secuencia']}      AAHH: ${item['aahh']}",
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        textScaleFactor: 1,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(width: 15),
+            ],
+          ),
+          Text(
+            "${item['punto_asociado']}",
+            textScaleFactor: 1,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 15),
-        ],
-      ),
-      Text(
-        "${item['punto_asociado']}",
-        textScaleFactor: 1,
-        style: TextStyle(
-          fontSize: 13,
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      Text(
-        item['direccion_punto'],
-        textScaleFactor: 1,
-        style: TextStyle(
-          fontSize: 13,
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      Row(
-        children: [
           Text(
-            "SERIAL DEL MALETÍN: ",
+            item['direccion_punto'],
             textScaleFactor: 1,
-            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          Text(item['lonchera']),
+          Row(
+            children: [
+              Text(
+                "SERIAL DEL MALETÍN: ",
+                textScaleFactor: 1,
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+              Text(item['lonchera']),
+            ],
+          ),
+          Row(children: [
+            Text(
+              "BULTO: ",
+              textScaleFactor: 1,
+              style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+            ),
+            Flexible(
+              child: Text(
+                "${item['envase']}",
+                textScaleFactor: 1,
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary),
+              ),
+            )
+          ]),
+          ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) {
+            // Dividir el valor del contacto en nombre y número
+            final match = RegExp(r'(.+?)\s+\[(\d+)\]').firstMatch(entry.value.toString());
+            if (match != null) {
+              final nombre = match.group(1); // Captura el nombre
+              final numero = match.group(2); // Captura el número
+              // Buscar el DNI relacionado en las claves 'dni_contacto_ope' o 'dni_contacto_ope2'
+              final dniKey = entry.key.endsWith('1')
+                  ? 'dni_contacto_ope'
+                  : entry.key.endsWith('2')
+                      ? 'dni_contacto_ope2'
+                      : null;
+              final dni = dniKey != null && item.containsKey(dniKey) ? item[dniKey].toString() : 'DNI NO DISPONIBLE';
+              return Text(
+                '${entry.key.toString().toUpperCase()}: $nombre $dni [$numero]',
+                textScaleFactor: 1,
+                style: const TextStyle(fontSize: 13),
+              );
+            }
+            // Si el formato no coincide, mostrar el valor original
+            return Text(
+              '${entry.key.toString().toUpperCase()}: ${entry.value.toString()}',
+              textScaleFactor: 1,
+              style: const TextStyle(fontSize: 13),
+            );
+          }),
+          Text(
+            "IMPORTE: ${item['importe']}",
+            textScaleFactor: 1,
+            style: const TextStyle(
+              fontSize: 13,
+            ),
+          ),
+          Text("${item['modalidad_servicio']}", textScaleFactor: 1, style: const TextStyle(fontSize: 13)),
+          SizedBox(height: 7)
         ],
       ),
-      Row(children: [
-        Text(
-          "ENVASE: ",
-          textScaleFactor: 1,
-          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
-        ),
-        Flexible(
-          child: Text(
-            "${item['envase']}",
-            textScaleFactor: 1,
-            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary),
-          ),
-        )
-      ]),
-      ...item.entries.where((entry) => entry.key.startsWith('contacto')).map((entry) {
-        // Dividir el valor del contacto en nombre y número
-        final match = RegExp(r'(.+?)\s+\[(\d+)\]').firstMatch(entry.value.toString());
-        if (match != null) {
-          final nombre = match.group(1); // Captura el nombre
-          final numero = match.group(2); // Captura el número
-          // Buscar el DNI relacionado en las claves 'dni_contacto_ope' o 'dni_contacto_ope2'
-          final dniKey = entry.key.endsWith('1')
-              ? 'dni_contacto_ope'
-              : entry.key.endsWith('2')
-                  ? 'dni_contacto_ope2'
-                  : null;
-          final dni = dniKey != null && item.containsKey(dniKey) ? item[dniKey].toString() : 'DNI NO DISPONIBLE';
-
-          return Text(
-            '${entry.key.toString().toUpperCase()}: $nombre $dni [$numero]',
-            textScaleFactor: 1,
-            style: const TextStyle(fontSize: 13),
-          );
-        }
-        // Si el formato no coincide, mostrar el valor original
-        return Text(
-          '${entry.key.toString().toUpperCase()}: ${entry.value.toString()}',
-          textScaleFactor: 1,
-          style: const TextStyle(fontSize: 13),
-        );
-      }),
-      Text(
-        "IMPORTE: ${item['importe']}",
-        textScaleFactor: 1,
-        style: const TextStyle(
-          fontSize: 13,
-        ),
+      Positioned(
+        right: 12,
+        bottom: 12, // o top: 12 si lo quieres arriba
+        child: ElevatedButton.icon(
+            onPressed: () =>
+                _mostrarImagenDialog(context, item['ruta_foto_url']),
+            icon: const Icon(Icons.image, size: 16, color: Colors.white),
+            label: const Text(
+              "Foto",
+              style: TextStyle(fontSize: 12, color: Colors.white),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade300,
+              // rojo bajito
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            )),
       ),
-      Text("${item['modalidad_servicio']}", textScaleFactor: 1, style: const TextStyle(fontSize: 13)),
-      SizedBox(height: 7)
     ],
+  );
+}
+
+void _mostrarImagenDialog(BuildContext context, String? url) async {
+  // 1) Validar URL
+  if (url == null || url.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No hay URL de imagen')),
+    );
+    return;
+  }
+
+  // 2) Opcional: precargar para detectar errores antes de abrir
+  final imageProvider = NetworkImage(url);
+  try {
+    await precacheImage(imageProvider, context);
+  } catch (_) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No se pudo precargar la imagen')),
+    );
+    // igual abrimos el diálogo para mostrar el errorBuilder
+  }
+
+  // 3) Abrir diálogo con constraints y zoom
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierColor: Colors.black54,
+    builder: (ctx) {
+      final size = MediaQuery.of(ctx).size;
+      final maxW = math.min(size.width * 0.95, 1200.0);
+      final maxH = math.min(size.height * 0.9, 900.0);
+      final controller = TransformationController();
+
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        child: Stack(
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxW, maxHeight: maxH),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    color: Colors.black,
+                    child: StatefulBuilder(
+                      builder: (ctx2, setState) {
+                        final controller = TransformationController();
+                        ImageStreamListener? listener;
+
+                        void _setInitialFit(Size imgSize, Size viewport) {
+                          final iw = imgSize.width, ih = imgSize.height;
+                          final vw = viewport.width, vh = viewport.height;
+                          final scale = math.min(vw / iw, vh / ih); // contain
+                          final tx = (vw - iw * scale) / 2; // centrar X
+                          final ty = (vh - ih * scale) / 2; // centrar Y
+                          controller.value = Matrix4.identity()
+                            ..translate(tx, ty)
+                            ..scale(scale);
+                        }
+
+                        return LayoutBuilder(
+                          builder: (ctx3, cons) {
+                            final viewport =
+                                Size(cons.maxWidth, cons.maxHeight);
+
+                            // preparar stream para conocer tamaño real de la imagen
+                            final image = Image.network(url);
+                            final stream =
+                                image.image.resolve(const ImageConfiguration());
+
+                            listener ??= ImageStreamListener((info, _) {
+                              _setInitialFit(
+                                Size(info.image.width.toDouble(),
+                                    info.image.height.toDouble()),
+                                viewport,
+                              );
+                              // quitamos el listener luego de la primera vez
+                              stream.removeListener(listener!);
+                            });
+
+                            // Añadir listener (idempotente)
+                            stream.addListener(listener!);
+
+                            return GestureDetector(
+                              onDoubleTapDown: (d) {
+                                final m = controller.value;
+                                final zoomed = m.getMaxScaleOnAxis() > 1.05;
+                                if (zoomed) {
+                                  // volver al “fit to contain” centrado
+                                  // ojo: si quieres recordar el viewport, vuelve a calcular con _setInitialFit
+                                  _setInitialFit(
+                                    // usamos el último tamaño conocido; si no lo tienes, puedes volver a pedirlo
+                                    Size(cons.maxWidth, cons.maxHeight),
+                                    Size(cons.maxWidth, cons.maxHeight),
+                                  );
+                                } else {
+                                  const z = 2.5;
+                                  // zoom hacia el punto tocado
+                                  final f = d.localPosition;
+                                  controller.value = controller.value
+                                    ..translate(
+                                        -f.dx * (z - 1), -f.dy * (z - 1))
+                                    ..scale(z);
+                                }
+                                setState(() {});
+                              },
+                              child: InteractiveViewer(
+                                transformationController: controller,
+                                minScale: 0.5,
+                                maxScale: 6,
+                                panEnabled: true,
+                                clipBehavior: Clip.none,
+                                constrained: false,
+                                // permite crecer
+                                boundaryMargin: const EdgeInsets.all(80),
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  // importante: sin BoxFit para que respete tamaño real
+                                  child: image,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
   );
 }

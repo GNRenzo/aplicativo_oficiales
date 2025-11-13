@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:microcash_tripulacion/theme/util.dart';
+import 'package:nb_utils/nb_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -24,10 +25,9 @@ class _MyHomePageState extends State<MyHomePage> {
   var dio = Dio();
   late Timer _timer;
   DateTime _currentDateTime = DateTime.now();
-  String fechaH =
-      "${DateTime.now().year.toString().padLeft(4, '0')}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}";
 
   var resultado;
+  var user = {};
   var respValidar;
   bool activarKm = false;
 
@@ -40,24 +40,28 @@ class _MyHomePageState extends State<MyHomePage> {
     return 'No disponible en este dispositivo';
   }
 
-  var userId = 0;
+  var userId = '';
   var name = '';
 
   TextEditingController serialController = TextEditingController();
   TextEditingController serialKm = TextEditingController();
 
   Future<void> obtenerDatosServicio() async {
-    var fecha = fechaH;
-    var response = await dio.request('$link/api_mobile/apk_tripulacion/contar_tipo_servicio/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fecha.split(' ')[0]}', options: Options(method: 'GET'));
+    user = await datosUsuario();
+    final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
+    Response response = await dio.request("$link/api_mobile/apk_tripulacion/contar_tipo_servicio/?pe_user_id=${widget.trabajador['user_id']}&pe_fecha_atencion=${fechaH.split(' ')[0]}",
+        options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
     if (response.statusCode == 200) {
       resultado = response.data;
     }
+    print(resultado['resultSet']);
   }
 
   Future<void> ValidarSerial(String serial) async {
-    var fecha = fechaH;
-    var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_correlativo_ruta/?pe_user_id=${widget.trabajador['user_id']}&pe_correlativo=$serial&pe_fecha_atencion=${fecha.split(' ')[0]}',
-        options: Options(method: 'GET'));
+    user = await datosUsuario();
+    final basicAuth = 'Basic ${base64Encode(utf8.encode('${user['user']}:${user['pass']}'))}';
+    var response = await dio.request('$link/api_mobile/apk_tripulacion/validar_correlativo_ruta/?pe_user_id=${widget.trabajador['user_id']}&pe_correlativo=$serial&pe_fecha_atencion=${fechaH.split(' ')[0]}',
+        options: Options(method: 'GET', headers: {'Authorization': basicAuth}));
     if (response.statusCode == 200) {
       respValidar = response.data;
     }
@@ -67,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     obtenerDatosServicio();
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 2), (Timer timer) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       setState(() {
         _currentDateTime = DateTime.now();
       });
@@ -85,8 +89,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     getAndroidId();
-    fechaH =
-        "${DateTime.now().year.toString().padLeft(4, '0')}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')} ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}";
     if (resultado == null) {
       return Scaffold(body: Center(child: CircularProgressIndicator()));
     } else {
